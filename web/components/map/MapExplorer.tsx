@@ -97,7 +97,19 @@ export function MapExplorer({
       <div className="border-b border-line p-4 space-y-3">
         <div>
           <div className="text-xs text-muted mb-1.5">What should the map show?</div>
-          <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Map measure">
+          <select
+            className="sm:hidden w-full rounded-md border border-line bg-surface px-2 py-2 text-sm"
+            value={metricKey}
+            onChange={(e) => setMetricKey(e.target.value as MetricKey)}
+            aria-label="Map measure"
+          >
+            {METRICS.map((m) => (
+              <option key={m.key} value={m.key}>
+                {m.label}
+              </option>
+            ))}
+          </select>
+          <div className="hidden sm:flex flex-wrap gap-1.5" role="radiogroup" aria-label="Map measure">
             {METRICS.map((m) => (
               <button
                 key={m.key}

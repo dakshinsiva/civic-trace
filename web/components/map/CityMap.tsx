@@ -132,7 +132,7 @@ export function CityMap({
           type: "fill-extrusion",
           source: lvl,
           layout: { visibility: "none" },
-          paint: { "fill-extrusion-color": NO_DATA, "fill-extrusion-height": 0, "fill-extrusion-opacity": 0.85 },
+          paint: { "fill-extrusion-color": NO_DATA, "fill-extrusion-height": 0, "fill-extrusion-opacity": 0.82, "fill-extrusion-vertical-gradient": true },
         },
         firstSymbol,
       );
@@ -246,7 +246,7 @@ export function CityMap({
     for (const [id, v] of values) {
       color.push(id, colorFor(v.value));
       opacity.push(id, v.value == null ? 0.18 : 0.78);
-      height.push(id, v.value == null ? 0 : 200 + (v.value / maxV) * (level === "areas" ? 6000 : 3000));
+      height.push(id, v.value == null ? 0 : 60 + (v.value / maxV) * (level === "areas" ? 2400 : 1100));
     }
     color.push(NO_DATA);
     height.push(0);
@@ -266,8 +266,9 @@ export function CityMap({
       }
     }
     map.setLayoutProperty("area-labels", "visibility", level === "areas" ? "visible" : "none");
-    map.easeTo({ pitch: threeD ? 55 : 0, bearing: threeD ? -17 : 0, duration: 800 });
-  }, [ready, values, breaks, metric, level, threeD]);
+    map.easeTo({ pitch: threeD ? 50 : 0, bearing: threeD ? -17 : 0, zoom: threeD ? Math.min(map.getZoom(), level === "areas" ? 10.3 : 11.5) : map.getZoom(), duration: 800 });
+    if (map.getLayer("dots")) map.setLayoutProperty("dots", "visibility", showDots && !threeD ? "visible" : "none");
+  }, [ready, values, breaks, metric, level, threeD, showDots]);
 
   // ---- tender dots (placed at the named ward, jittered deterministically)
   useEffect(() => {
@@ -287,8 +288,8 @@ export function CityMap({
       feats.push({ type: "Feature", properties: { nit: r.nit, g }, geometry: { type: "Point", coordinates: [c[0] + Math.cos(ang) * rad, c[1] + Math.sin(ang) * rad] } });
     }
     (map.getSource("dots") as GeoJSONSource).setData({ type: "FeatureCollection", features: feats } as never);
-    map.setLayoutProperty("dots", "visibility", showDots ? "visible" : "none");
-  }, [ready, rows, wardGeo, showDots]);
+    map.setLayoutProperty("dots", "visibility", showDots && !threeD ? "visible" : "none");
+  }, [ready, rows, wardGeo, showDots, threeD]);
 
   // ---- selection highlight + fly
   const prevSel = useRef<MapSelection>(null);
