@@ -1,0 +1,208 @@
+# CivicTrace rule definitions — the single source of truth for thresholds AND for
+# the explanatory text shown on the methodology and flag pages.
+#
+# A flag is a RISK INDICATOR: a pattern worth a closer look. It is never a
+# finding of wrongdoing, and it is never attributed to a person.
+
+defaults:
+  min_completeness: 0.8          # required-field completeness for a slice, else "coverage insufficient"
+  fiscal_year_start_month: 4     # Indian fiscal year: April–March (IST)
+  partial_fys: ["2023-24"]       # KPPP history starts 20 May 2023; the current FY is added automatically
+
+rules:
+  supplier_share:
+    plain_name: "One contractor wins unusually often"
+    plain_question: "Does one contractor win far more of an area's jobs than you would expect?"
+    plain_why: "If the same contractor keeps winning in one area, competition may not be working. It can also simply mean it is the only capable firm nearby."
+    number: 1
+    version: "1.0.0"
+    name: "Supplier's share of a buyer's selections"
+    ocp_ref: "OCP 2024 R040 (adapted)"
+    enabled: true
+    levels: [department, division]   # division = KPPP location (e.g. an executive engineer's division)
+    min_selections: 30
+    min_supplier_wins: 5
+    fdr_q: 0.05                      # Benjamini–Hochberg false-discovery rate across all tests in a run
+    summary: >-
+      One supplier won a significantly larger share of a buyer's selected bids in one work
+      category and fiscal year than an even split among the active suppliers would give.
+    method: >-
+      For each buyer (department or division) × work category × fiscal year with at least
+      30 selected bids, each supplier with at least 5 wins is tested against an even split
+      (expected share = 1 / number of suppliers that won anything in that group) with a
+      one-sided binomial test. p-values are corrected for multiple testing
+      (Benjamini–Hochberg, q < 0.05). Shares are counted by number of selections; value
+      share is shown for context only.
+    non_fraud_explanations:
+      - "The supplier may be one of few firms with the equipment, registration class or capacity for this kind of work in this area."
+      - "Few contractors bid in this division at all; a high share can reflect low market interest rather than steering."
+      - "The supplier may simply have offered the lowest prices consistently."
+      - "Annual-rate or maintenance work packages are often split into many similar tenders, inflating win counts."
+    limitations:
+      - "An even split is a simple benchmark, not a model of a real market; real markets are rarely even."
+      - "Suppliers are identified by KPPP supplier ID only. Related firms under different IDs are not combined, so concentration can be understated."
+      - "Selections without a recorded award ('evaluation completed') are included and labelled; some may never have been awarded."
+
+  single_bidder:
+    plain_name: "Only one company competed"
+    plain_question: "Was there real competition for this contract?"
+    plain_why: "Competition keeps prices down. When only one company reaches the price round, nobody is competing with it on price."
+    number: 2
+    version: "1.0.0"
+    name: "Single bidder at price stage"
+    ocp_ref: "OCP 2024 R018"
+    enabled: true
+    summary: >-
+      Only one bidder reached the price (commercial) stage of an open tender, and that bid was selected.
+    method: >-
+      Counts the bidders listed in the tender's published comparative statement. Applies to
+      open (non-reserved) tender calls with a selected bid. Where no comparative statement
+      is available, the bidder count is treated as unknown, never as one. The buyer's
+      single-bidder rate (with its denominator) is shown as the baseline; the EU Single
+      Market Scoreboard bands (≤10% good, >20% poor) are shown only as outside context.
+    non_fraud_explanations:
+      - "Small, low-value or remote works often attract few bidders."
+      - "Other bidders may have been disqualified at the technical stage for legitimate reasons (missing documents, turnover)."
+      - "This may already be a re-tender after earlier calls drew no or few bids; accepting a single bid can be the sensible choice."
+      - "Specialised work may have only one qualified local contractor."
+    limitations:
+      - "The comparative statement lists only bidders who reached the price stage. Bidders rejected at the technical stage are not counted, so this is not the total number of bids submitted."
+      - "Reserved tenders (restricted to certain contractor groups) are excluded because their bidder pools are smaller by design."
+
+  short_window:
+    plain_name: "Very little time to bid"
+    plain_question: "Did companies get a fair amount of time to prepare a bid?"
+    plain_why: "A rushed deadline can shut out companies that did not hear about the tender in advance."
+    number: 3
+    version: "1.1.0"
+    name: "Short submission window"
+    ocp_ref: "OCP 2024 R003"
+    enabled: true
+    min_slice: 30
+    min_days_below_median: 3     # materiality floor: windows clustered tightly would otherwise flag a 1-day difference
+    legal_minimums:
+      enabled: false   # stays off until the current gazetted KTPP Rules text is committed to docs/legal/
+      source: "Karnataka Transparency in Public Procurements Rules, 2000, rule 17 (amended) — PENDING VERIFICATION"
+    summary: >-
+      The time between publication and the original bid deadline was unusually short compared
+      with similar tenders from the same buyer.
+    method: >-
+      Window = days from publication to the ORIGINAL bid-submission deadline (before any
+      corrigendum extensions). Flagged when below the lower fence (Q1 − 1.5 × IQR) for the
+      same buyer × work category × call type (first call vs re-tender), with at least 30
+      calls in the comparison group, and at least 3 days shorter than the group median. Groups where nearly all windows are identical (IQR = 0)
+      are skipped. A comparison with the statutory minimum period is disabled until the
+      current gazetted rule text is verified.
+    non_fraud_explanations:
+      - "Rule 17(2) of the KTPP Rules allows a shorter period when a higher authority approves it in writing for urgent reasons; such approvals are rarely published."
+      - "Emergency works (e.g. monsoon flood response, road cave-ins) legitimately need short windows."
+      - "Re-tenders and short-term tenders commonly use shorter periods."
+    limitations:
+      - "Publication time on the portal may differ from when the notice reached potential bidders."
+      - "The baseline is the buyer's own practice, which may itself be short by legal standards."
+
+  amendments:
+    plain_name: "Deadline or terms changed repeatedly"
+    plain_question: "Was the tender changed again and again after it was published?"
+    plain_why: "Changes are often routine, but repeated changes can also be used to steer a tender toward one bidder."
+    number: 4
+    version: "1.0.0"
+    name: "Repeated amendments (corrigenda)"
+    ocp_ref: "Adapted from OCP 2024 R064/R069 (contract amendments) and StateWatch ARI 1-1"
+    enabled: true
+    min_corrigenda: 3
+    min_deadline_extensions: 2
+    summary: >-
+      A tender call was amended at least three times, or its bid deadline was extended at least twice.
+    method: >-
+      Counts approved corrigenda published for the call and, among them, those that moved
+      the bid-submission deadline later. Calls that ended with no bids received are
+      excluded (extensions are an ordinary response to a lack of bidders). The baseline is
+      the share of comparable calls (same buyer × work category) with that many amendments.
+    non_fraud_explanations:
+      - "Deadlines are often extended to attract more bidders, which improves competition."
+      - "Corrigenda can fix clerical errors, respond to bidder queries or reflect administrative changes such as staff transfers."
+      - "Elections, model-code-of-conduct periods or holidays can force schedule changes."
+    limitations:
+      - "The portal's structured corrigendum data records date changes and a free-text reason. Changes to eligibility criteria or specifications are not captured in structured form, so 'material' changes cannot be identified automatically."
+
+  award_ratio:
+    plain_name: "Winning price far from the official estimate"
+    plain_question: "Was the winning price close to what the government estimated the work would cost?"
+    plain_why: "A price well above the estimate may mean the public is overpaying. A price far below it may mean the work cannot be done properly for that money."
+    number: 5
+    version: "1.1.0"
+    name: "Selected bid far from the estimate"
+    ocp_ref: "OCP 2024 R031 (two-sided, log scale)"
+    enabled: true
+    min_slice: 30
+    # Materiality floors: when most bids sit at the estimate, the IQR fences are very
+    # tight and ordinary competitive discounts would fall outside them. A ratio must be
+    # outside the fences AND beyond these floors to be flagged.
+    high_min_ratio: 1.05
+    low_max_ratio: 0.80
+    summary: >-
+      The selected bid was unusually high, or unusually low, relative to the published
+      estimated contract value (ECV), compared with other tenders in the same work category.
+    method: >-
+      Ratio = selected bid value ÷ ECV, compared on a log scale. Flagged when outside
+      Q1 − 1.5 × IQR or Q3 + 1.5 × IQR for the same work category and bid type, with at
+      least 30 comparable selections, AND beyond a materiality floor (at least 5% above
+      the estimate, or at least 20% below it), so that ordinary competitive discounts are
+      not flagged when most bids cluster at the estimate. The bid value before negotiation is used, because
+      negotiation commonly brings the price exactly to the estimate. Ratios outside
+      0.2–5 are treated as probable data errors and quarantined, not flagged.
+    non_fraud_explanations:
+      - "High: estimates can be outdated (schedule-of-rates revisions, material price changes) or the work may have been retendered after no bids at the estimate."
+      - "High: specialised or urgent work may legitimately cost more than the schedule of rates."
+      - "Low: aggressive pricing by contractors seeking work is common; it can raise quality or completion risk but is not itself improper."
+    limitations:
+      - "The estimate's tax basis (inclusive/exclusive of GST) is not always stated; the portal reports the bid's tax type only."
+      - "Estimates prepared from schedule-of-rates items may not reflect market prices."
+
+  concentration:
+    plain_name: "A few contractors get most of the work"
+    plain_question: "Is the work in this area spread across many contractors, or held by a few?"
+    plain_why: "When a handful of firms win most jobs, they face less pressure on price and quality."
+    number: 6
+    version: "1.0.0"
+    name: "Concentrated selections in a market"
+    ocp_ref: "OCP 2024 R051"
+    enabled: true
+    levels: [department, division]
+    min_selections: 50
+    hhi_threshold: 1800
+    top3_threshold: 0.6
+    summary: >-
+      A few suppliers account for most of a buyer's selected bids in one work category and fiscal year.
+    method: >-
+      For each buyer (department or division) × work category × fiscal year with at least
+      50 selected bids: Herfindahl–Hirschman Index (HHI) on count shares (0–10,000) and the
+      top-3 suppliers' share. Flagged when HHI > 1,800 (the US DOJ 'moderately
+      concentrated' upper bound cited by OCP) or the top-3 share ≥ 60%. The effective
+      number of suppliers (10,000 ÷ HHI) is shown alongside.
+    non_fraud_explanations:
+      - "Local markets for small civil works can be genuinely thin: few registered contractors operate in a given division."
+      - "Contractor registration classes cap the value of work a firm may take, restricting who can bid."
+      - "Persistent concentration can reflect efficient, reliable local firms."
+    limitations:
+      - "HHI on counts treats a small repair and a large project equally; value shares are shown for context."
+      - "Supplier IDs are not linked across related firms, so true concentration may be higher."
+
+  audit_linked:
+    plain_name: "Mentioned in an official audit"
+    plain_question: "Has an official auditor written about this work?"
+    plain_why: "Audit reports can point to problems the tender records alone cannot show."
+    number: 7
+    version: "0.0.0"
+    name: "Audit-linked record"
+    enabled: false
+    summary: "A tender matches a work specifically discussed in an official audit report (CAG / Lokayukta)."
+    method: >-
+      Planned: candidate matches between audit-report paragraphs and tenders (same buyer and
+      work name) go to a review queue; only human-reviewed matches are published, quoting the
+      paragraph and page. Most CAG reports available cover periods before KPPP data begins (May 2023).
+    non_fraud_explanations:
+      - "Audit observations frequently concern documentation and process, not misconduct."
+    limitations:
+      - "Not yet implemented."

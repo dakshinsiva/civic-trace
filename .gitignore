@@ -1,0 +1,22 @@
+# data
+data/raw/
+data/*.sqlite
+data/*.sqlite-*
+data/ingest-*.log
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+# node
+node_modules/
+web/.next/
+web/out/
+.vercel
+.env*
+!.env.example
+.DS_Store
+
+# generated data release (rebuild with `make export`)
+web/public/data/
+data/snapshot.sqlite

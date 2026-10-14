@@ -1,0 +1,7 @@
+# Items withheld from the public export while a dispute or correction is open.
+# Each entry needs a reason and a date. Removing an entry republishes the item.
+#
+# - {type: flag, id: "<flag_id>", reason: "Supplier disputes award attribution; under review", since: "2026-10-14"}
+# - {type: tender, id: "<nit_id>", reason: "...", since: "..."}
+# - {type: supplier, id: "<supplier_id>", reason: "...", since: "..."}
+suppressions: []

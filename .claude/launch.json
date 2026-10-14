@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "civictrace-static",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "3210", "--directory", "web/out"],
+      "port": 3210
+    },
+    {
+      "name": "civictrace-dev",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--dir", "web", "dev", "--port", "3211"],
+      "port": 3211
+    }
+  ]
+}

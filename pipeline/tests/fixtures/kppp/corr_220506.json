@@ -1,0 +1,82 @@
+[
+ {
+  "createdTs": 1757045445000,
+  "version": 3,
+  "createdDate": null,
+  "modifiedDate": null,
+  "id": 31241,
+  "nitId": 220506,
+  "processInstanceId": 374410,
+  "corrigendumDetails": [
+   {
+    "referenceNumber": "BBMP/2025-26/OW/WORK_INDENT9071",
+    "readAs": "Administrative Reason"
+   }
+  ],
+  "reason": "Administrative Reason",
+  "historyOrder": 1,
+  "status": "APPROVED",
+  "statusText": "Approved",
+  "tenderDocCloseDateOriginal": null,
+  "tenderDocCloseDateRevised": null,
+  "tenderReceiptCloseDateOriginal": "10-09-2025 17:00:00",
+  "tenderReceiptCloseDateRevised": "18-09-2025 16:30:00",
+  "tenderQueryCloseDateOriginal": "03-09-2025 15:00:00",
+  "tenderQueryCloseDateRevised": null,
+  "technicalBidOpenDateOriginal": "11-09-2025 17:30:00",
+  "technicalBidOpenDateRevised": "19-09-2025 16:31:00",
+  "financialBidOpenDateOriginal": "12-09-2025 11:30:00",
+  "financialBidOpenDateRevised": "20-09-2025 16:00:00",
+  "prequalBidOpenDateOriginal": null,
+  "prequalBidOpenDateRevised": null,
+  "prequalTenderBidOpenOriginal": null,
+  "prequalTenderBidOpenRevised": null,
+  "preBidMeetingDateOriginal": "04-09-2025 15:00:00",
+  "preBidMeetingDateRevised": null,
+  "prequalValidityPeriodOriginal": null,
+  "prequalValidityPeriodRevised": null,
+  "prebidMeetingAddressOriginalId": null,
+  "prebidMeetingAddressRevisedId": null,
+  "prebidMeetingAddressRevised": null
+ },
+ {
+  "createdTs": 1758034291000,
+  "version": 4,
+  "createdDate": null,
+  "modifiedDate": null,
+  "id": 31875,
+  "nitId": 220506,
+  "processInstanceId": 380125,
+  "corrigendumDetails": [
+   {
+    "referenceNumber": "BBMP/2025-26/OW/WORK_INDENT9071",
+    "readAs": "Administration reasons"
+   }
+  ],
+  "reason": "Administration reasons",
+  "historyOrder": 2,
+  "status": "APPROVED",
+  "statusText": "Approved",
+  "tenderDocCloseDateOriginal": null,
+  "tenderDocCloseDateRevised": null,
+  "tenderReceiptCloseDateOriginal": "18-09-2025 16:30:00",
+  "tenderReceiptCloseDateRevised": "23-10-2025 15:00:00",
+  "tenderQueryCloseDateOriginal": "03-09-2025 15:00:00",
+  "tenderQueryCloseDateRevised": null,
+  "technicalBidOpenDateOriginal": "19-09-2025 16:31:00",
+  "technicalBidOpenDateRevised": "24-10-2025 15:01:00",
+  "financialBidOpenDateOriginal": "20-09-2025 16:00:00",
+  "financialBidOpenDateRevised": "27-10-2025 11:00:00",
+  "prequalBidOpenDateOriginal": null,
+  "prequalBidOpenDateRevised": null,
+  "prequalTenderBidOpenOriginal": null,
+  "prequalTenderBidOpenRevised": null,
+  "preBidMeetingDateOriginal": "04-09-2025 15:00:00",
+  "preBidMeetingDateRevised": null,
+  "prequalValidityPeriodOriginal": null,
+  "prequalValidityPeriodRevised": null,
+  "prebidMeetingAddressOriginalId": null,
+  "prebidMeetingAddressRevisedId": null,
+  "prebidMeetingAddressRevised": null
+ }
+]

@@ -1,0 +1,366 @@
+{
+ "createdTs": null,
+ "version": null,
+ "createdDate": null,
+ "modifiedDate": null,
+ "noticeInvitingTenderDTO": {
+  "createdTs": 1770448885672,
+  "version": 14,
+  "createdDate": null,
+  "modifiedDate": null,
+  "tenderType": "RFQ",
+  "evaluationType": "TWO_COVER",
+  "evaluationTypeText": "Two Tender Document System(Two Cover)",
+  "invitingStrategy": "OPEN",
+  "invitingStrategyText": "Open",
+  "taxType": "INCLUSIVE_TAX",
+  "tenderFee": "530.00",
+  "emd": "25000.00",
+  "bidValueType": "ITEM_WISE",
+  "bidValueTypeText": "Item wise",
+  "tenderReceiptClose": "16-02-2026 17:00:00",
+  "tenderQueryClose": "10-02-2026 14:00:00",
+  "technicalBidOpen": "17-02-2026 17:30:00",
+  "publishedDate": "09-02-2026 16:37:47",
+  "publishedByPost": "BBMP_EE_DIV_MAH",
+  "publishedByUser": "KPE19462 - RAVIKUMAR THUMBADI CHIKKANNA",
+  "bidValidityPeriod": 90,
+  "noOfCalls": 4,
+  "preBidMeetingDate": null,
+  "preBidMeetingYn": false,
+  "preQualificationBidOpen": null,
+  "denominationType": "RUPEES",
+  "denominationTypeText": "Rupees",
+  "retenderedYn": true,
+  "percentageRateTypeText": null,
+  "contactPerson": "Ravi Kumar T C",
+  "splitEmdRequiredYn": false,
+  "emdBankGuarantee": null,
+  "emdCash": null,
+  "bgValidityPeriod": null,
+  "hideWeightage": null,
+  "multipleCurrencySelectionAllowedYn": false,
+  "isTechWeightageAllowed": false,
+  "highestBidderSelection": false,
+  "isVariableEmdAllowed": null,
+  "qcbsTenderYn": null,
+  "itemwiseEmdRequiredYn": null,
+  "sampleSubmissionDate": null,
+  "tenderSupplierList": null
+ },
+ "tenderSchedule": {
+  "createdTs": 1770448885674,
+  "version": 31,
+  "createdDate": null,
+  "modifiedDate": null,
+  "tenderNumber": "BBMP/2024-25/BD/WORK_INDENT5011/CALL-4",
+  "title": "Providing allied work in Basavanna nagara Samudhaya Bhavana in Hoody ward no.98",
+  "description": "Providing allied work in Basavanna nagara Samudhaya Bhavana in Hoody ward no.98",
+  "category": "WORKS",
+  "categoryText": "Works",
+  "ecv": "2116273.38",
+  "deptName": "Bruhat Bengaluru Mahanagara Palike",
+  "status": "AWARDED",
+  "statusText": "Awarded",
+  "remarks": null,
+  "csrValue": null,
+  "ecvtenderYn": true,
+  "location": 924,
+  "locationName": "BBMP Mahadevapura Division",
+  "provisionalAmount": 2500000.0,
+  "groupOverheadTotal": null,
+  "fileNumber": "09/08/2024-25"
+ },
+ "tenderSubEstimateList": [
+  {
+   "createdTs": 1770448886000,
+   "version": 1,
+   "createdDate": null,
+   "modifiedDate": null,
+   "workCategoryName": "Buildings",
+   "subEstimateName": "Providing allied work in Basavanna nagara Samudhaya Bhavana in Hoody ward no.98",
+   "estimateTotal": 2116273.38,
+   "itemList": [
+    {
+     "id": 8323635,
+     "tenderSubEstimateId": 348361,
+     "categoryName": null,
+     "itemCode": "code01",
+     "description": "Demolishing R.C.C. work manually/ by mechanical means including stacking of steel bars and disposal of unserviceable material to the appropriate disposal area as per direction of Engineer-in-charge.. (PgNo: 163, Vol-(II), I.No:19.3)",
+     "uomName": "Cum",
+     "baseRate": 2668.6,
+     "finalRate": 2668.6,
+     "quantity": 1.73,
+     "modifyQuantityYn": false,
+     "minQuantity": null,
+     "maxQuantity": null,
+     "buyBackYn": false,
+     "buyBackValue": null,
+     "hideYn": false,
+     "netAmount": 4616.678,
+     "taxCount": 0
+    },
+    {
+     "id": 8323636,
+     "tenderSubEstimateId": 348361,
+     "categoryName": null,
+     "itemCode": "code02",
+     "description": "Demolishing brick work In cement mortar manually/ by mechanical means including stacking of serviceable material and disposal of unserviceable material to the appropriate disposal area as per direction of Engineer-in-charge (PgNo: 163, Vol-(II), I.No:19.7.3)",
+     "uomName": "Cum",
+     "baseRate": 1131.9,
+     "finalRate": 1131.9,
+     "quantity": 9.38,
+     "modifyQuantityYn": false,
+     "minQuantity": null,
+     "maxQuantity": null,
+     "buyBackYn": false,
+     "buyBackValue": null,
+     "hideYn": false,
+     "netAmount": 10617.222,
+     "taxCount": 0
+    }
+   ]
+  }
+ ],
+ "generalCriterionList": [
+  {
+   "createdTs": 1770448886000,
+   "version": 0,
+   "createdDate": null,
+   "modifiedDate": null,
+   "criterionType": "ELIGIBILITY",
+   "description": "Tenders  from Joint ventures are not acceptable.",
+   "tenderEligibilityCriterionDocumentList": null
+  },
+  {
+   "createdTs": 1770448886000,
+   "version": 0,
+   "createdDate": null,
+   "modifiedDate": null,
+   "criterionType": "ELIGIBILITY",
+   "description": "Bidders shall not be under a declaration of ineligibility for\r\n corrupt and fraudulent practices issued by Government of Karnataka\r\n",
+   "tenderEligibilityCriterionDocumentList": null
+  },
+  {
+   "createdTs": 1770448886000,
+   "version": 0,
+   "createdDate": null,
+   "modifiedDate": null,
+   "criterionType": "ELIGIBILITY",
+   "description": "Bidders shall ensure upload of relevant document certifying his/her status as Scheduled Caste/ Scheduled Tribe/other reserved category as prescribed in the tender document.",
+   "tenderEligibilityCriterionDocumentList": null
+  },
+  {
+   "createdTs": 1770448886000,
+   "version": 0,
+   "createdDate": null,
+   "modifiedDate": null,
+   "criterionType": "ELIGIBILITY",
+   "description": "It shall be the responsibility of the Bidder to ensure credit of Tender Processing Fee and EMD into the respective receiving bank accounts of e-Procurement on or before the last date and time of bid submission.",
+   "tenderEligibilityCriterionDocumentList": null
+  },
+  {
+   "createdTs": 1770448886000,
+   "version": 0,
+   "createdDate": null,
+   "modifiedDate": null,
+   "criterionType": "ELIGIBILITY",
+   "description": "EMD Payments through e-Payment mode shall be made as one single transaction and payments made in part are liable for rejection.",
+   "tenderEligibilityCriterionDocumentList": null
+  },
+  {
+   "createdTs": 1770448886000,
+   "version": 0,
+   "createdDate": null,
+   "modifiedDate": null,
+   "criterionType": "ELIGIBILITY",
+   "description": "All terms and conditions as per Tender Document",
+   "tenderEligibilityCriterionDocumentList": null
+  }
+ ],
+ "preQualCriterionList": null,
+ "technicalCriterionList": [
+  {
+   "createdTs": null,
+   "version": null,
+   "createdDate": null,
+   "modifiedDate": null,
+   "description": "Minimum financial turnover (civil engineering construction works) not less than two times the annual payments from this contract (Rs. xxxxx Lakhs)",
+   "criterionCategoryText": null,
+   "criterionTypeOthersValue": null,
+   "tenderTechnicalCriterionDocumentList": []
+  },
+  {
+   "createdTs": null,
+   "version": null,
+   "createdDate": null,
+   "modifiedDate": null,
+   "description": "Satisfactoriy completed (atleast 90%) as prime contractor at-least one such similar work of value not less than Rs. xxxxxxx (80% of estimated cost of tender)",
+   "criterionCategoryText": null,
+   "criterionTypeOthersValue": null,
+   "tenderTechnicalCriterionDocumentList": []
+  },
+  {
+   "createdTs": null,
+   "version": null,
+   "createdDate": null,
+   "modifiedDate": null,
+   "description": "Tenderer or his identified Sub Contractor should possess valid Electrical License for executing building electrificatio works and should have executed similar electrical works totallng Rs. xxxxxx (not less than 50% of electrical works) n any one year",
+   "criterionCategoryText": null,
+   "criterionTypeOthersValue": null,
+   "tenderTechnicalCriterionDocumentList": []
+  },
+  {
+   "createdTs": null,
+   "version": null,
+   "createdDate": null,
+   "modifiedDate": null,
+   "description": "Tenderer or his identified Sub Contractor should possess valid license for executing water supply / sanitary engineering works  and should have executed similar works totallng Rs. xxxxxx (not less than 50% of electrical works) n any one year",
+   "criterionCategoryText": null,
+   "criterionTypeOthersValue": null,
+   "tenderTechnicalCriterionDocumentList": []
+  },
+  {
+   "createdTs": null,
+   "version": null,
+   "createdDate": null,
+   "modifiedDate": null,
+   "description": "Total value of civl engineering works executed and payments received in the last five years (year-wise)",
+   "criterionCategoryText": null,
+   "criterionTypeOthersValue": null,
+   "tenderTechnicalCriterionDocumentList": []
+  },
+  {
+   "createdTs": null,
+   "version": null,
+   "createdDate": null,
+   "modifiedDate": null,
+   "description": "List of existing commitments and ongoing works",
+   "criterionCategoryText": null,
+   "criterionTypeOthersValue": null,
+   "tenderTechnicalCriterionDocumentList": []
+  },
+  {
+   "createdTs": null,
+   "version": null,
+   "createdDate": null,
+   "modifiedDate": null,
+   "description": "List of works for which tenders already submitted",
+   "criterionCategoryText": null,
+   "criterionTypeOthersValue": null,
+   "tenderTechnicalCriterionDocumentList": []
+  },
+  {
+   "createdTs": null,
+   "version": null,
+   "createdDate": null,
+   "modifiedDate": null,
+   "description": "Banker Details for reference",
+   "criterionCategoryText": null,
+   "criterionTypeOthersValue": null,
+   "tenderTechnicalCriterionDocumentList": []
+  },
+  {
+   "createdTs": null,
+   "version": null,
+   "createdDate": null,
+   "modifiedDate": null,
+   "description": "Construction equipment owned by the tenderer and equipment proposed to be deployed on this contract, if awarded",
+   "criterionCategoryText": null,
+   "criterionTypeOthersValue": null,
+   "tenderTechnicalCriterionDocumentList": []
+  },
+  {
+   "createdTs": null,
+   "version": null,
+   "createdDate": null,
+   "modifiedDate": null,
+   "description": "Reports on the financial standing of the tenderer, such as profit and loss statements and auditor\u2019s reports for the last five years",
+   "criterionCategoryText": null,
+   "criterionTypeOthersValue": null,
+   "tenderTechnicalCriterionDocumentList": []
+  },
+  {
+   "createdTs": null,
+   "version": null,
+   "createdDate": null,
+   "modifiedDate": null,
+   "description": "Qualification and experience of the key technical and management personnel in permanent employment with the tenderer and those that are proposed to be deployed on this contract, if awarded",
+   "criterionCategoryText": null,
+   "criterionTypeOthersValue": null,
+   "tenderTechnicalCriterionDocumentList": []
+  },
+  {
+   "createdTs": null,
+   "version": null,
+   "createdDate": null,
+   "modifiedDate": null,
+   "description": "Proposals for subcontracting components of works amounting to more than 20% of the contract price (for each, the qualifications and experience of the identified sub-contractor in the relevant fields should be attached)",
+   "criterionCategoryText": null,
+   "criterionTypeOthersValue": null,
+   "tenderTechnicalCriterionDocumentList": []
+  },
+  {
+   "createdTs": null,
+   "version": null,
+   "createdDate": null,
+   "modifiedDate": null,
+   "description": "Workdone",
+   "criterionCategoryText": "Past Experience",
+   "criterionTypeOthersValue": null,
+   "tenderTechnicalCriterionDocumentList": [
+    {
+     "createdTs": null,
+     "version": null,
+     "createdDate": null,
+     "modifiedDate": null,
+     "documentName": "Work Done Certificate"
+    }
+   ]
+  }
+ ],
+ "tenderCriterionDocumentList": [
+  {
+   "documentName": "Annual Turnover Certificate",
+   "optional": false,
+   "documentTypeText": "Technical Bid"
+  },
+  {
+   "documentName": "Company Registration Certificate",
+   "optional": false,
+   "documentTypeText": "Technical Bid"
+  },
+  {
+   "documentName": "Reserved Category Certificate",
+   "optional": false,
+   "documentTypeText": "Technical Bid"
+  },
+  {
+   "documentName": "Small Scale Industries Certificate",
+   "optional": false,
+   "documentTypeText": "Technical Bid"
+  }
+ ],
+ "tenderWorkLocationList": [],
+ "tenderAddress": null,
+ "tenderRecallDTO": null,
+ "evalStagesCompletedInfoDTO": {
+  "commercialQualificationProcessApprover": "null - Chief Engineer (BBMP Mahadevapura)",
+  "commercialQualificationProcessApprovedDate": 1771852957000,
+  "preQualificationProcessApprover": null,
+  "preQualificationProcessApprovedDate": null,
+  "technicalQualificationProcessApprover": "null - Chief Engineer (BBMP Mahadevapura)",
+  "technicalQualificationProcessApprovedDate": 1771838784000,
+  "commercialQualificationProcessOpenBy": "RAVIKUMAR THUMBADI CHIKKANNA - Executive Engineer",
+  "commercialQualificationProcessOpenDate": 1771839702000
+ },
+ "tenderAwardDatesDTO": {
+  "awardedDates": 1772793627936,
+  "listOfBidderDonePBGDTO": [
+   {
+    "name": "ABHIRAM R( R K CONSTRUCTIONS )",
+    "date": 1772466998373
+   }
+  ]
+ }
+}

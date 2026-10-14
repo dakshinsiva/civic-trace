@@ -1,0 +1,31 @@
+# Bengaluru procuring entities on KPPP (dept ids verified against
+# portal-service/departments/activeDepartment on 2026-10-14).
+#
+# `enabled: true` buyers are ingested. Lineage notes record the 2025 restructuring:
+# the Greater Bengaluru Governance Act replaced BBMP from 15 May 2025 with the
+# Greater Bengaluru Authority (GBA) and five city corporations. Existing BBMP
+# tender records keep the BBMP department id on the portal. Constitution dates of
+# the five corporations are not yet verified from a gazette notification, so they
+# are left blank rather than guessed.
+
+buyers:
+  - {dept_id: 671,   code: BBMP,   family: GBA, name: "Bruhat Bengaluru Mahanagara Palike", effective_to: "2025-05-14", enabled: true,
+     note: "Superseded by GBA and five city corporations under the Greater Bengaluru Governance Act (in force 15 May 2025 per news reports; gazette citation pending)."}
+  - {dept_id: 12625, code: GBA,    family: GBA, name: "Greater Bengaluru Authority", parent_code: null, effective_from: "2025-05-15", enabled: true}
+  - {dept_id: 12603, code: BCCC,   family: GBA, name: "Bengaluru Central City Corporation", parent_code: GBA, enabled: true}
+  - {dept_id: 12607, code: BECC,   family: GBA, name: "Bengaluru East City Corporation",    parent_code: GBA, enabled: true}
+  - {dept_id: 12610, code: BNCC,   family: GBA, name: "Bengaluru North City Corporation",   parent_code: GBA, enabled: true}
+  - {dept_id: 12608, code: BSCC,   family: GBA, name: "Bengaluru South City Corporation",   parent_code: GBA, enabled: true}
+  - {dept_id: 12609, code: BWCC,   family: GBA, name: "Bengaluru West City Corporation",    parent_code: GBA, enabled: true}
+  - {dept_id: 12290, code: BSMILE, family: GBA, name: "Bengaluru Smart Infrastructure Limited", parent_code: GBA, enabled: true}
+  - {dept_id: 7914,  code: BSWML,  family: GBA, name: "Bengaluru Solid Waste Management Limited", parent_code: GBA, enabled: true}
+  - {dept_id: 9630,  code: GBDA,   family: GBA, name: "Greater Bengaluru Development Authority", enabled: true}
+  # Next wave (toggle on once the municipal set is validated)
+  - {dept_id: 1566,  code: BDA,    family: other, name: "Bengaluru Development Authority", enabled: false}
+  - {dept_id: 5117,  code: BWSSB,  family: other, name: "Bengaluru Water Supply And Sewerage Board", enabled: false}
+  - {dept_id: 7234,  code: BMRCL,  family: other, name: "Bangalore Metro Rail Corporation Limited", enabled: false}
+  - {dept_id: 3779,  code: BESCOM, family: other, name: "Bangalore Electricity Supply Company Limited", enabled: false}
+  - {dept_id: 1714,  code: BNGSCL, family: other, name: "Bengaluru Smart City Limited", enabled: false}
+  - {dept_id: 5508,  code: KRIDE,  family: other, name: "Karnataka Rail Infrastructure Development Company Limited", enabled: false}
+  - {dept_id: 1712,  code: BMRDA,  family: other, name: "Bangalore Metropolitan Region Development Authority", enabled: false}
+  - {dept_id: 3583,  code: BMTC,   family: other, name: "Bangalore Metropolitan Transport Corporation", enabled: false}
