@@ -20,3 +20,5 @@ web/out/
 # generated data release (rebuild with `make export`)
 web/public/data/
 data/snapshot.sqlite
+data/geo/raw/
+data/geo/archive/

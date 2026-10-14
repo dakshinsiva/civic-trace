@@ -86,6 +86,7 @@ def export_all(conn: sqlite3.Connection, out: Path, include_relationships: bool 
         return {"calls": 0}
 
     calls = calls[~calls["nit_id"].astype(str).isin(sup["tender"].keys())].copy()
+    geo_info = _locate_calls(calls, out)
     suppressed_suppliers = {int(k) for k in sup["supplier"]}
     docs = {
         int(r["id"]): {"url": r["url"], "sha256": r["sha256"], "fetched_at": r["fetched_at"]}
@@ -350,6 +351,7 @@ def export_all(conn: sqlite3.Connection, out: Path, include_relationships: bool 
     }
     _write(out / "overview.json", overview)
     _write(out / "facts.json", _facts(calls, flags, suppressed_suppliers))
+    _write(out / "findings.json", _findings(calls, flags, rule_summary, cfg))
 
     # ------------------------------------------------------------ meta / methodology / coverage
     coverage = _coverage(calls)
@@ -388,6 +390,7 @@ def export_all(conn: sqlite3.Connection, out: Path, include_relationships: bool 
             }
         ],
         "relationships_included": include_relationships,
+        "geo": geo_info,
         "suppressions": [
             {"type": t, "id": k, "reason": v.get("reason"), "since": v.get("since")} for t, d in sup.items() for k, v in d.items()
         ],
@@ -423,6 +426,12 @@ def _facts(calls: pd.DataFrame, flags: list[dict], suppressed_suppliers: set[int
         for n in nits:
             bits[int(n)] |= b
 
+    def enc_nullable(series: pd.Series) -> tuple[list, list]:
+        vals = [None if pd.isna(v) else str(v) for v in series]
+        dictionary = sorted({v for v in vals if v is not None})
+        index = {v: i for i, v in enumerate(dictionary)}
+        return dictionary, [None if v is None else index[v] for v in vals]
+
     def enc(col: str) -> tuple[list, list[int]]:
         vals = df[col].fillna("—").astype(str)
         dictionary = sorted(vals.unique())
@@ -453,13 +462,158 @@ def _facts(calls: pd.DataFrame, flags: list[dict], suppressed_suppliers: set[int
             "sel": [0 if pd.isna(l) else (1 if l == "awarded" else 2) for l in df["selection_label"]],
             "supplier": sup,
             "flags": [bits.get(int(n), 0) for n in df["nit_id"]],
+            "ac": [None if pd.isna(v) else int(v) for v in df.get("ac_no", pd.Series([None] * len(df)))],
         }
     )
+    if "ward_key" in df:
+        wd, widx = enc_nullable(df["ward_key"])
+        out["dict"]["ward"] = wd
+        out["cols"]["ward"] = widx
     names = (
         df[df["supplier_id"].notna()].groupby("supplier_id")["supplier_name"].last().to_dict()
     )
     out["suppliers"] = {str(int(k)): v for k, v in names.items() if int(k) not in suppressed_suppliers}
     return out
+
+
+def _locate_calls(calls: pd.DataFrame, out: Path) -> dict:
+    """Place each call on the map (constituency area and, where named, ward) and write boundaries."""
+    from .geo import ATTRIBUTION, GEO_RAW, Locator, build_geo_assets, load_wards
+
+    if not (GEO_RAW / "wards369.kml").exists():
+        calls["ac_no"] = None
+        calls["ward_key"] = None
+        calls["geo_method"] = "none"
+        return {"available": False}
+    loc = Locator(load_wards(with_geometry=False))
+    placed = [loc.locate(l, t) for l, t in zip(calls["location_name"], calls["title"])]
+    calls["ac_no"] = [p["ac_no"] for p in placed]
+    calls["ward_key"] = [p["ward_key"] for p in placed]
+    calls["geo_method"] = [p["geo_method"] for p in placed]
+    assets = build_geo_assets(out / "geo")
+    n = len(calls) or 1
+    return {
+        "available": True,
+        "attribution": ATTRIBUTION,
+        "assets": assets,
+        "share_with_area": round(float(calls["ac_no"].notna().mean()), 4),
+        "share_with_ward": round(float(calls["ward_key"].notna().mean()), 4),
+        "share_zonal": round(sum(1 for p in placed if p["geo_method"] == "zonal") / n, 4),
+    }
+
+
+def _wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float] | None:
+    if not n:
+        return None
+    p = k / n
+    d = 1 + z * z / n
+    c = (p + z * z / (2 * n)) / d
+    h = z * ((p * (1 - p) / n + z * z / (4 * n * n)) ** 0.5) / d
+    return (round(max(0.0, c - h), 4), round(min(1.0, c + h), 4))
+
+
+def _findings(calls: pd.DataFrame, flags: list[dict], rule_summary: dict, cfg: dict) -> dict:
+    """How widespread are the warning signs? Prevalence with 95% intervals, honest about coverage.
+
+    The detail fetch order is month-stratified and pseudo-random within each month, so the
+    fetched calls are close to a random sample of all listed calls while the backfill runs.
+    """
+    fetched = calls[(calls["detail_state"] != "pending") & (~calls["quarantined"])]
+    n_fetched, n_listed = int(len(fetched)), int(len(calls))
+    call_flags: dict[int, set] = defaultdict(set)
+    for f in flags:
+        if f["subject_type"] == "tender_call":
+            call_flags[int(f["context"]["nit_id"])].add(f["rule_id"])
+    fetched_ids = set(int(x) for x in fetched["nit_id"])
+    any_flag = sum(1 for n in fetched_ids if call_flags.get(n))
+    multi = sum(1 for n in fetched_ids if len(call_flags.get(n, ())) >= 2)
+
+    sel = fetched[fetched["has_selection"]]
+    open_known = sel[(sel["tender_type"] == "OPEN") & sel["n_price_stage_bidders"].notna()]
+    single = int((open_known["n_price_stage_bidders"] == 1).sum())
+    two = int((open_known["n_price_stage_bidders"] == 2).sum())
+    priced = sel[(sel["ecv"] > 0) & (sel["bid_value"] > 0)]
+    ratio = priced["bid_value"] / priced["ecv"]
+    at_est = int((ratio.sub(1).abs() <= 0.01).sum())
+    above5 = int((ratio > 1.05).sum())
+    pub = pd.to_datetime(fetched["published_at"], utc=True, errors="coerce")
+    close = pd.to_datetime(fetched["close_at_original"], utc=True, errors="coerce")
+    win = ((close - pub).dt.total_seconds() / 86400).dropna()
+    win = win[(win > 0) & (win < 365)]
+    under7 = int((win < 7).sum())
+    changed3 = int((fetched["n_corrigenda"] >= 3).sum())
+    status = calls["status"].value_counts().to_dict()
+    awarded = int(status.get("AWARDED", 0))
+    eval_done = int(status.get("EVALUATION_COMPLETED", 0))
+    recalled = int(status.get("RECALLED", 0))
+    retendered = int(status.get("RETENDERED", 0))
+
+    def med_diff(rs):
+        r = (rs["bid_value"] / rs["ecv"] - 1) * 100
+        return round(float(r.median()), 2) if len(r) else None
+
+    by_bidders = {
+        "one": med_diff(priced[priced["n_price_stage_bidders"] == 1]),
+        "two": med_diff(priced[priced["n_price_stage_bidders"] == 2]),
+        "three_plus": med_diff(priced[priced["n_price_stage_bidders"] >= 3]),
+        "n_one": int((priced["n_price_stage_bidders"] == 1).sum()),
+        "n_two": int((priced["n_price_stage_bidders"] == 2).sum()),
+        "n_three_plus": int((priced["n_price_stage_bidders"] >= 3).sum()),
+    }
+    # Same comparison within each type of work (controls for the kind of job).
+    by_cat = []
+    for cat, g in priced.groupby("work_category"):
+        lo = g[g["n_price_stage_bidders"].isin([1, 2])]
+        hi = g[g["n_price_stage_bidders"] >= 3]
+        if len(lo) >= 10 and len(hi) >= 10:
+            by_cat.append({"category": cat, "low_competition": med_diff(lo), "n_low": int(len(lo)), "three_plus": med_diff(hi), "n_three_plus": int(len(hi))})
+    # Illustration (not a loss estimate): what 1–2 bidder contracts would have cost at the
+    # typical 3+ bidder discount for the same type of work.
+    gap, gap_base = 0.0, 0.0
+    for cat, g in priced.groupby("work_category"):
+        hi = g[g["n_price_stage_bidders"] >= 3]
+        lo = g[g["n_price_stage_bidders"].isin([1, 2])]
+        if len(hi) >= 10 and len(lo):
+            r3 = float((hi["bid_value"] / hi["ecv"]).median())
+            diff = lo["bid_value"] - lo["ecv"] * r3
+            gap += float(diff.clip(lower=0).sum())
+            gap_base += float(lo["bid_value"].sum())
+    # Value at stake: winning bids where only one company competed
+    single_value = float(open_known.loc[open_known["n_price_stage_bidders"] == 1, "bid_value"].sum())
+
+    def stat(k, n):
+        return {"k": int(k), "n": int(n), "share": round(k / n, 4) if n else None, "ci95": _wilson(int(k), int(n))}
+
+    return {
+        "coverage": {
+            "listed_calls": n_listed,
+            "fetched_calls": n_fetched,
+            "fetched_share": round(n_fetched / n_listed, 4) if n_listed else None,
+            "sampling": "Details are fetched month by month in a pseudo-random order within each month, so the fetched set approximates a random sample of all listed tenders.",
+        },
+        "any_warning_sign": stat(any_flag, n_fetched),
+        "two_or_more_signs": stat(multi, n_fetched),
+        "single_bidder": stat(single, len(open_known)),
+        "two_bidders": stat(two, len(open_known)),
+        "price_within_1pct_of_estimate": stat(at_est, len(priced)),
+        "price_over_5pct_above_estimate": stat(above5, len(priced)),
+        "window_under_7_days": stat(under7, len(win)),
+        "changed_3_plus_times": stat(changed3, n_fetched),
+        "median_window_days": round(float(win.median()), 1) if len(win) else None,
+        "median_price_vs_estimate_by_bidders": by_bidders,
+        "single_bidder_value": single_value,
+        "price_vs_estimate_by_category": by_cat,
+        "competition_gap": {"amount": round(gap, 0), "of_value": round(gap_base, 0), "share": round(gap / gap_base, 4) if gap_base else None},
+        "selected_value": float(sel["bid_value"].sum()),
+        "status_all_listed": {
+            "awarded": awarded,
+            "evaluation_completed_no_award": eval_done,
+            "recalled": recalled,
+            "retendered": retendered,
+            "listed": n_listed,
+        },
+        "rules": {rid: dict(v) for rid, v in rule_summary.items()},
+    }
 
 
 def _windows(calls: pd.DataFrame) -> pd.DataFrame:

@@ -3,7 +3,7 @@
 export type FactsFile = {
   n: number;
   rule_bits: Record<string, number>;
-  dict: Record<"buyer" | "division" | "category" | "fy" | "month" | "tender_type" | "status", string[]>;
+  dict: Record<"buyer" | "division" | "category" | "fy" | "month" | "tender_type" | "status", string[]> & { ward?: string[] };
   cols: {
     buyer: number[];
     division: number[];
@@ -23,6 +23,8 @@ export type FactsFile = {
     sel: number[];
     supplier: (number | null)[];
     flags: number[];
+    ac?: (number | null)[];
+    ward?: (number | null)[];
   };
   suppliers: Record<string, string>;
 };
@@ -46,6 +48,10 @@ export type Fact = {
   selection: "awarded" | "selected_no_award" | null;
   supplier: number | null;
   flags: number;
+  /** Assembly-constituency area number (administrative geography only). */
+  area: number | null;
+  /** Ward key, e.g. "East-14", when a ward is named in the tender. */
+  ward: string | null;
 };
 
 export function decodeFacts(f: FactsFile): Fact[] {
@@ -72,13 +78,15 @@ export function decodeFacts(f: FactsFile): Fact[] {
       selection: c.sel[i] === 1 ? "awarded" : c.sel[i] === 2 ? "selected_no_award" : null,
       supplier: c.supplier[i],
       flags: c.flags[i],
+      area: c.ac?.[i] ?? null,
+      ward: c.ward && c.ward[i] != null && d.ward ? d.ward[c.ward[i] as number] : null,
     };
   }
   return out;
 }
 
-export type Filters = { buyer: string; fy: string; category: string; division: string; tenderType: string };
-export const EMPTY_FILTERS: Filters = { buyer: "", fy: "", category: "", division: "", tenderType: "" };
+export type Filters = { buyer: string; fy: string; category: string; division: string; tenderType: string; area: string };
+export const EMPTY_FILTERS: Filters = { buyer: "", fy: "", category: "", division: "", tenderType: "", area: "" };
 
 export function applyFilters(rows: Fact[], f: Filters): Fact[] {
   return rows.filter(
@@ -87,7 +95,8 @@ export function applyFilters(rows: Fact[], f: Filters): Fact[] {
       (!f.fy || r.fy === f.fy) &&
       (!f.category || r.category === f.category) &&
       (!f.division || r.division === f.division) &&
-      (!f.tenderType || r.tenderType === f.tenderType),
+      (!f.tenderType || r.tenderType === f.tenderType) &&
+      (!f.area || String(r.area) === f.area),
   );
 }
 

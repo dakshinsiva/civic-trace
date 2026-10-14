@@ -142,6 +142,21 @@ def claims_new(
     typer.echo(f"wrote {path}")
 
 
+@ingest_app.command("geo")
+def ingest_geo() -> None:
+    """Download official Bengaluru ward/corporation boundaries (OpenCity, public domain)."""
+    from .geo import GEO_RAW, SOURCES
+    from .http import PoliteClient
+
+    GEO_RAW.mkdir(parents=True, exist_ok=True)
+    with PoliteClient(raw_dir=GEO_RAW.parent / "archive", min_interval=1.0) as client:
+        for name, url in SOURCES.items():
+            f = client.fetch(url, archive_as=name)
+            if f.status == 200:
+                (GEO_RAW / name).write_bytes(f.body)
+            typer.echo(f"{name}: HTTP {f.status}, {len(f.body):,} bytes")
+
+
 @ingest_app.command("kla")
 def ingest_kla(db: Path = typer.Option(DB_PATH)) -> None:
     """Snapshot Karnataka Legislative Assembly member/minister lists (draft office claims)."""

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 
 import { Histogram } from "@/components/charts/Histogram";
 import { Term } from "@/components/Term";
@@ -10,11 +10,13 @@ import { applyFilters, BIDDER_COLORS, BIDDER_LABELS, bidderGroup, decodeFacts, E
 import { inr } from "@/lib/format";
 import { useJson } from "@/lib/useJson";
 
+import { MapExplorer } from "@/components/map/MapExplorer";
+
 import { PriceScatter } from "./PriceScatter";
 import { MonthlyVolume, SingleBidTrend } from "./Trends";
 import { WhoWinsWhere } from "./WhoWinsWhere";
 
-const FILTER_KEYS: (keyof Filters)[] = ["buyer", "fy", "category", "division", "tenderType"];
+const FILTER_KEYS: (keyof Filters)[] = ["buyer", "fy", "category", "division", "tenderType", "area"];
 
 export function Explorer({ buyerNames }: { buyerNames: Record<string, string> }) {
   const sp = useSearchParams();
@@ -24,15 +26,20 @@ export function Explorer({ buyerNames }: { buyerNames: Record<string, string> })
   const all = useMemo(() => (data ? decodeFacts(data) : []), [data]);
   const filters: Filters = { ...EMPTY_FILTERS };
   for (const k of FILTER_KEYS) filters[k] = sp.get(k) ?? "";
-  const rows = useMemo(() => applyFilters(all, filters), [all, filters.buyer, filters.fy, filters.category, filters.division, filters.tenderType]); // eslint-disable-line react-hooks/exhaustive-deps
+  const rows = useMemo(() => applyFilters(all, filters), [all, filters.buyer, filters.fy, filters.category, filters.division, filters.tenderType, filters.area]); // eslint-disable-line react-hooks/exhaustive-deps
+  // The map shows every area, so it ignores the area filter itself.
+  const mapRows = useMemo(() => applyFilters(all, { ...filters, area: "" }), [all, filters.buyer, filters.fy, filters.category, filters.division, filters.tenderType]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const set = (k: keyof Filters, v: string) => {
-    const next = new URLSearchParams(sp.toString());
-    if (v) next.set(k, v);
-    else next.delete(k);
-    if (k === "buyer") next.delete("division");
-    router.replace(`${pathname}?${next.toString()}#explore`, { scroll: false });
-  };
+  const set = useCallback(
+    (k: keyof Filters, v: string) => {
+      const next = new URLSearchParams(window.location.search);
+      if (v) next.set(k, v);
+      else next.delete(k);
+      if (k === "buyer") next.delete("division");
+      router.replace(`${pathname}?${next.toString()}`, { scroll: false });
+    },
+    [pathname, router],
+  );
 
   const opts = useMemo(() => {
     const scoped = filters.buyer ? all.filter((r) => r.buyer === filters.buyer) : all;
@@ -70,7 +77,7 @@ export function Explorer({ buyerNames }: { buyerNames: Record<string, string> })
           <F label="Type of work" value={filters.category} onChange={(v) => set("category", v)} options={opts.category.map((c) => [c, c])} />
           <F label={<>Open or <Term k="reserved">reserved</Term></>} value={filters.tenderType} onChange={(v) => set("tenderType", v)} options={[["OPEN", "Open to all"], ["RESERVED", "Reserved"]]} />
           {anyFilter && (
-            <button type="button" className="text-accent underline pb-1.5" onClick={() => router.replace(`${pathname}#explore`, { scroll: false })}>
+            <button type="button" className="text-accent underline pb-1.5" onClick={() => router.replace(`${pathname}`, { scroll: false })}>
               Clear filters
             </button>
           )}
@@ -80,6 +87,25 @@ export function Explorer({ buyerNames }: { buyerNames: Record<string, string> })
           can share exactly this view.
         </p>
       </details>
+
+      {/* The map */}
+      <MapExplorer
+        rows={mapRows}
+        names={data.suppliers}
+        fys={opts.fy}
+        fy={filters.fy}
+        setFy={(v) => set("fy", v)}
+        area={filters.area}
+        setArea={(v) => set("area", v)}
+      />
+      {filters.area && (
+        <p className="rounded-md border border-[var(--accent)] bg-[var(--series-1-wash)] px-3 py-2 text-sm text-ink">
+          Showing one area from the map. Every chart below is limited to it.{" "}
+          <button type="button" className="text-accent underline" onClick={() => set("area", "")}>
+            Show the whole city
+          </button>
+        </p>
+      )}
 
       {/* KPIs in plain words */}
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">

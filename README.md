@@ -23,6 +23,7 @@ docs/       SOURCES.md (what the portal provides, verified), CORRECTIONS.md
 
 ```bash
 ./tasks.sh ingest      # resumable; ≤1 request/second; the full backfill takes about a day
+(cd pipeline && uv run civictrace ingest geo)   # official ward/corporation boundaries (OpenCity, public domain)
 ./tasks.sh status      # progress
 ./tasks.sh data        # snapshot → rules → export → build site → verify no relationship data in public build
 ./tasks.sh test        # pipeline tests, claims validation, web type-check
@@ -35,6 +36,24 @@ python3 -m http.server 3210 --directory web/out
 ```
 
 `make` targets mirror `tasks.sh` for machines that have `make`.
+
+## What the site shows
+
+- **How widespread?** (`/findings`): plain-language answer to "how rampant is it?". Prevalence of each warning sign with
+  95% intervals, the competition-vs-price comparison (overall and within each type of work), and an auto-generated
+  verdict that changes with the data. Details are fetched in a month-stratified random order, so partial data works as a
+  random sample.
+- **Interactive map** (home page): Bengaluru's 28 constituency areas and 369 wards (GBA delimitation 2025). Nine
+  measures (thin competition, price at estimate, top-3 contractor share, rushed deadlines, ₹ per resident…), a 3D mode,
+  individual contract dots, play-through-the-years, locality search, hotspots and area profiles. Clicking an area filters
+  every chart below it.
+- **Explorer charts**: competition, price vs estimate scatter, time to bid, changes, monthly volume, "who wins where".
+- **Warning-sign evidence pages**, tender pages with every price-stage bidder, supplier and department pages, glossary.
+
+Tenders are placed on the map by their engineering division (BBMP divisions follow assembly constituencies) and by
+official ward names found in their titles, with spelling-tolerant matching. Ward numbers are ignored because titles mix
+numbering schemes, and zone-wide departments are left off the map rather than guessed. About 75% of tenders get an
+area and about 40% a ward. See `pipeline/civictrace/geo.py` and `pipeline/tests/test_geo.py`.
 
 ## The warning signs (rules 1–6)
 

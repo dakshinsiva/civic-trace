@@ -172,11 +172,17 @@ def detail_queue(
 
 
 def _interleave_by_month(rows: list) -> list:
-    """Round-robin across publication months (newest month first in each round), so
-    every month gains coverage early instead of one month at a time."""
+    """Round-robin across publication months (newest month first in each round), and a
+    deterministic pseudo-random order within each month (hash of nitId). Any prefix of
+    the queue is then close to a month-stratified random sample, so prevalence
+    estimates are unbiased while the backfill is still running."""
+    import hashlib
+
     buckets: dict[str, list] = defaultdict(list)
     for r in rows:
         buckets[(r["published_at"] or "")[:7]].append(r)
+    for m in buckets:
+        buckets[m].sort(key=lambda r: hashlib.sha1(str(r["nit_id"]).encode()).hexdigest())
     months = sorted(buckets, reverse=True)
     out, i = [], 0
     while len(out) < len(rows):
