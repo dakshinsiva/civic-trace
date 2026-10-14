@@ -15,11 +15,11 @@ type Stats = { areas: Map<string, AreaStat>; wards: Map<string, AreaStat>; areaG
 
 /** Ready-made views, phrased as the questions people actually ask. */
 const QUICK_VIEWS: { id: string; question: string; metric: MetricKey; level: Level; dots?: boolean }[] = [
+  { id: "money", question: "Where is the money going?", metric: "per_capita", level: "areas" },
   { id: "competition", question: "Where is competition weakest?", metric: "low_comp_rate", level: "areas" },
   { id: "single", question: "Where does only one company bid?", metric: "single_rate", level: "areas" },
   { id: "estimate", question: "Where do prices sit at the estimate?", metric: "at_estimate_rate", level: "areas" },
   { id: "dominate", question: "Where do a few contractors dominate?", metric: "top3_share", level: "areas" },
-  { id: "money", question: "Where is the money going?", metric: "per_capita", level: "areas" },
   { id: "contracts", question: "Show me every contract", metric: "tenders", level: "wards", dots: true },
 ];
 
@@ -85,6 +85,14 @@ export function MapExplorer({
     }, 1800);
     return () => clearTimeout(t);
   }, [playing, fy, fys, setFy]);
+
+  // The first-visit hint goes away as soon as someone points at the map.
+  useEffect(() => {
+    if (hintDismissed) return;
+    const off = (e: Event) => (e as CustomEvent).detail && setHintDismissed(true);
+    window.addEventListener("civictrace:hover", off);
+    return () => window.removeEventListener("civictrace:hover", off);
+  }, [hintDismissed]);
 
   // Fullscreen
   useEffect(() => {

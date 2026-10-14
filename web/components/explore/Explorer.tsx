@@ -43,7 +43,7 @@ export function Explorer({ buyerNames }: { buyerNames: Record<string, string> })
   );
 
   // Map view (shareable through the URL)
-  const measure = (METRICS.find((m) => m.key === sp.get("measure"))?.key ?? "low_comp_rate") as MetricKey;
+  const measure = (METRICS.find((m) => m.key === sp.get("measure"))?.key ?? "per_capita") as MetricKey;
   const level = sp.get("level") === "wards" ? "wards" : "areas";
   const setView = useCallback(
     (v: { measure?: MetricKey; level?: "areas" | "wards" }) => {

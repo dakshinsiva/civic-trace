@@ -59,7 +59,7 @@ export function CityMap({
   const mapRef = useRef<MLMap | null>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
-  const [tip, setTip] = useState<{ x: number; y: number; w: number; title: string; sub: string; text: string } | null>(null);
+  const [tip, setTip] = useState<{ x: number; y: number; w: number; title: string; text: string } | null>(null);
   const router = useRouter();
   const { data: areaGeo } = useJson<FC>("geo/areas.geojson");
   const { data: wardGeo } = useJson<FC>("geo/wards.geojson");
@@ -223,9 +223,7 @@ export function CityMap({
       const d = (e as CustomEvent).detail;
       if (!d) return setTip(null);
       const v = values.get(d.id);
-      const title = d.lvl === "areas" ? `${d.props.name}` : `${d.props.name}`;
-      const sub = d.lvl === "areas" ? `${d.props.corporations ?? ""} · assembly constituency area` : `Ward in ${d.props.ac} · ${d.props.corporation} corporation`;
-      setTip({ x: d.x, y: d.y, w: ref.current?.clientWidth ?? 600, title, sub, text: describe(metric, v?.value ?? null, v?.n ?? 0) });
+      setTip({ x: d.x, y: d.y, w: ref.current?.clientWidth ?? 600, title: String(d.props.name), text: describe(metric, v?.value ?? null, v?.n ?? 0) });
     };
     const onSel = (e: Event) => onSelect((e as CustomEvent).detail);
     const onOpen = (e: Event) => router.push(`/tender/?id=${(e as CustomEvent).detail}`);
@@ -356,13 +354,11 @@ export function CityMap({
       )}
       {tip && (
         <div
-          className="pointer-events-none absolute z-10 w-64 rounded-md border border-line bg-surface p-3 text-xs shadow-lg"
-          style={{ left: Math.min(tip.x + 14, tip.w - 270), top: Math.max(8, tip.y - 10) }}
+          className="pointer-events-none absolute z-10 max-w-[13rem] rounded-md border border-line bg-surface/95 px-2.5 py-1.5 text-xs leading-snug shadow-md"
+          style={{ left: Math.min(tip.x + 12, tip.w - 220), top: Math.max(8, tip.y + 12) }}
         >
-          <div className="font-semibold text-ink text-sm">{tip.title}</div>
-          <div className="text-muted">{tip.sub}</div>
-          <div className="mt-1.5 text-ink leading-snug">{tip.text}</div>
-          <div className="mt-1 text-muted">Click for the full profile</div>
+          <div className="font-semibold text-ink">{tip.title}</div>
+          <div className="text-ink-2">{tip.text}</div>
         </div>
       )}
     </div>
