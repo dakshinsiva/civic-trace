@@ -11,6 +11,7 @@ import { inr } from "@/lib/format";
 import { useJson } from "@/lib/useJson";
 
 import { MapExplorer } from "@/components/map/MapExplorer";
+import { METRICS, type MetricKey } from "@/lib/areaStats";
 
 import { PriceScatter } from "./PriceScatter";
 import { MonthlyVolume, SingleBidTrend } from "./Trends";
@@ -36,6 +37,19 @@ export function Explorer({ buyerNames }: { buyerNames: Record<string, string> })
       if (v) next.set(k, v);
       else next.delete(k);
       if (k === "buyer") next.delete("division");
+      router.replace(`${pathname}?${next.toString()}`, { scroll: false });
+    },
+    [pathname, router],
+  );
+
+  // Map view (shareable through the URL)
+  const measure = (METRICS.find((m) => m.key === sp.get("measure"))?.key ?? "low_comp_rate") as MetricKey;
+  const level = sp.get("level") === "wards" ? "wards" : "areas";
+  const setView = useCallback(
+    (v: { measure?: MetricKey; level?: "areas" | "wards" }) => {
+      const next = new URLSearchParams(window.location.search);
+      if (v.measure) next.set("measure", v.measure);
+      if (v.level) next.set("level", v.level);
       router.replace(`${pathname}?${next.toString()}`, { scroll: false });
     },
     [pathname, router],
@@ -97,6 +111,10 @@ export function Explorer({ buyerNames }: { buyerNames: Record<string, string> })
         setFy={(v) => set("fy", v)}
         area={filters.area}
         setArea={(v) => set("area", v)}
+        measure={measure}
+        level={level}
+        setView={setView}
+        focusKey={`${filters.buyer}|${filters.division}`}
       />
       {filters.area && (
         <p className="rounded-md border border-[var(--accent)] bg-[var(--series-1-wash)] px-3 py-2 text-sm text-ink">

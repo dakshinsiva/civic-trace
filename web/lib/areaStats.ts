@@ -248,3 +248,29 @@ export const RAMPS = {
   volume: ["#cde2fb", "#9ec5f4", "#5598e7", "#256abf", "#104281"],
 };
 export const NO_DATA = "#c3c2b7";
+
+/** One plain-English sentence describing a place on the current measure. */
+export function describe(metric: Metric, v: number | null, n: number): string {
+  if (v == null) return n ? `Only ${n} record${n === 1 ? "" : "s"} here so far: too few to say.` : "No contracts placed here yet.";
+  const p = `${Math.round(v * 100)}%`;
+  switch (metric.key) {
+    case "single_rate":
+      return `${p} of ${n} open contracts had only one company competing.`;
+    case "low_comp_rate":
+      return `${p} of ${n} open contracts had two or fewer companies competing.`;
+    case "at_estimate_rate":
+      return `${p} of ${n} winning prices were within 1% of the official estimate.`;
+    case "top3_share":
+      return `The three most frequent winners took ${p} of ${n} contracts.`;
+    case "warning_rate":
+      return `${p} of ${n} tenders carried a warning sign.`;
+    case "short_window":
+      return `${p} of ${n} tenders gave companies less than a week to bid.`;
+    case "spend":
+      return `${formatMetric(v, metric)} in winning bids across ${n} contracts.`;
+    case "per_capita":
+      return `${formatMetric(v, metric)} in winning bids (${n} contracts).`;
+    case "tenders":
+      return `${n} tenders placed here.`;
+  }
+}

@@ -51,6 +51,17 @@ export default function Home() {
         </div>
       )}
 
+      {/* Explorer */}
+      <section>
+        <h2 className="text-2xl font-semibold text-ink">Explore the map</h2>
+        <p className="mt-1 mb-4 text-ink-2 max-w-3xl">
+          Start with a question below the title, or click any part of the city. The charts further down follow whatever you pick.
+        </p>
+        <Suspense fallback={<p className="text-muted">Loading the explorer…</p>}>
+          <Explorer buyerNames={buyerNames} />
+        </Suspense>
+      </section>
+
       {/* Warning signs */}
       <section>
         <h2 className="text-2xl font-semibold text-ink">Six warning signs we check every tender for</h2>
@@ -89,17 +100,6 @@ export default function Home() {
               </Link>
             ))}
         </div>
-      </section>
-
-      {/* Explorer */}
-      <section>
-        <h2 className="text-2xl font-semibold text-ink">Explore the contracts</h2>
-        <p className="mt-1 mb-4 text-ink-2 max-w-3xl">
-          Pick an area, a year or a type of work, and every chart updates. Hover over anything to see the numbers behind it.
-        </p>
-        <Suspense fallback={<p className="text-muted">Loading the explorer…</p>}>
-          <Explorer buyerNames={buyerNames} />
-        </Suspense>
       </section>
 
       <section className="text-sm text-ink-2 max-w-3xl space-y-2">

@@ -6,7 +6,7 @@ import type { GeoJSONSource, Map as MLMap, MapGeoJSONFeature } from "maplibre-gl
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { classBreaks, computeStats, formatMetric, METRICS, metricValue, NO_DATA, RAMPS, type AreaStat, type MetricKey } from "@/lib/areaStats";
+import { computeStats, describe, METRICS, metricValue, type AreaStat, type MetricKey } from "@/lib/areaStats";
 import type { Fact } from "@/lib/facts";
 import { useJson } from "@/lib/useJson";
 
@@ -14,6 +14,8 @@ type FC = { type: "FeatureCollection"; attribution?: string; features: { type: "
 export type Level = "areas" | "wards";
 
 const CENTER: [number, number] = [77.59, 12.97];
+const ACCENT = "#2a78d6";
+const FOOTPRINT = "#eb6834";
 const DOT_COLORS: Record<string, string> = { "1": "#eb6834", "2": "#2a78d6", "3+": "#1baf7a", unknown: "#9a9890" };
 
 function hash(n: number) {
@@ -29,25 +31,35 @@ export function CityMap({
   rows,
   metricKey,
   level,
-  threeD,
   showDots,
   selection,
   onSelect,
   onStats,
+  highlight = null,
+  resetCmd = 0,
+  fitKey = "",
+  fitIds = null,
 }: {
   rows: Fact[];
   metricKey: MetricKey;
   level: Level;
-  threeD: boolean;
   showDots: boolean;
   selection: MapSelection;
   onSelect: (s: MapSelection) => void;
-  onStats?: (s: { areas: Map<string, AreaStat>; wards: Map<string, AreaStat>; breaks: number[]; areaGeo: FC | null; wardGeo: FC | null }) => void;
+  onStats?: (s: { areas: Map<string, AreaStat>; wards: Map<string, AreaStat>; areaGeo: FC | null; wardGeo: FC | null }) => void;
+  /** Ids (at the current level) to keep lit, e.g. a contractor's footprint; everything else fades. */
+  highlight?: Set<string> | null;
+  /** Increment to fly back to the whole city. */
+  resetCmd?: number;
+  /** When this key changes, zoom to fit these area numbers (empty key: whole city). */
+  fitKey?: string;
+  fitIds?: string[] | null;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MLMap | null>(null);
   const [ready, setReady] = useState(false);
-  const [tip, setTip] = useState<{ x: number; y: number; w: number; title: string; sub: string; value: string; n: string } | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [tip, setTip] = useState<{ x: number; y: number; w: number; title: string; sub: string; text: string } | null>(null);
   const router = useRouter();
   const { data: areaGeo } = useJson<FC>("geo/areas.geojson");
   const { data: wardGeo } = useJson<FC>("geo/wards.geojson");
@@ -74,11 +86,10 @@ export function CityMap({
     return out;
   }, [level, areaStats, wardStats, areaGeo, wardGeo, metric, pop]);
 
-  const breaks = useMemo(() => classBreaks([...values.values()].map((v) => v.value).filter((v): v is number => v != null)), [values]);
 
   useEffect(() => {
-    onStats?.({ areas: areaStats, wards: wardStats, breaks, areaGeo, wardGeo });
-  }, [areaStats, wardStats, breaks, areaGeo, wardGeo, onStats]);
+    onStats?.({ areas: areaStats, wards: wardStats, areaGeo, wardGeo });
+  }, [areaStats, wardStats, areaGeo, wardGeo, onStats]);
 
   // ---- create the map once
   useEffect(() => {
@@ -87,7 +98,9 @@ export function CityMap({
     const dark = window.matchMedia?.("(prefers-color-scheme: dark)").matches && document.documentElement.dataset.theme !== "light";
     import("maplibre-gl").then(({ default: maplibregl }) => {
       if (cancelled || !ref.current) return;
-      const map = new maplibregl.Map({
+      let map: MLMap;
+      try {
+        map = new maplibregl.Map({
         container: ref.current,
         style: `https://tiles.openfreemap.org/styles/${dark ? "dark" : "positron"}`,
         center: CENTER,
@@ -95,10 +108,17 @@ export function CityMap({
         minZoom: 9,
         maxZoom: 16,
         attributionControl: { compact: true, customAttribution: "Boundaries: GBA delimitation 2025 via OpenCity (public domain) · Tenders: KPPP" },
-        cooperativeGestures: false,
-      });
+        // Embedded in a scrolling page: plain scroll moves the page; ctrl/⌘+scroll or two fingers move the map.
+        cooperativeGestures: true,
+        });
+      } catch {
+        setFailed(true); // e.g. WebGL unavailable or blocked by the browser
+        return;
+      }
       map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "bottom-right");
       map.on("load", () => {
+        // Start the attribution collapsed (the "i" button) so it never covers the controls.
+        ref.current?.querySelector(".maplibregl-ctrl-attrib")?.classList.remove("maplibregl-compact-show");
         if (!cancelled) setReady(true);
       });
       mapRef.current = map;
@@ -125,25 +145,16 @@ export function CityMap({
     map.addSource("dots", { type: "geojson", data: { type: "FeatureCollection", features: [] } as never });
 
     for (const lvl of ["areas", "wards"] as const) {
-      map.addLayer({ id: `${lvl}-fill`, type: "fill", source: lvl, paint: { "fill-color": NO_DATA, "fill-opacity": 0.72 } }, firstSymbol);
-      map.addLayer(
-        {
-          id: `${lvl}-extrude`,
-          type: "fill-extrusion",
-          source: lvl,
-          layout: { visibility: "none" },
-          paint: { "fill-extrusion-color": NO_DATA, "fill-extrusion-height": 0, "fill-extrusion-opacity": 0.82, "fill-extrusion-vertical-gradient": true },
-        },
-        firstSymbol,
-      );
+      map.addLayer({ id: `${lvl}-fill`, type: "fill", source: lvl, paint: { "fill-color": ACCENT, "fill-opacity": 0.02 } }, firstSymbol);
       map.addLayer(
         {
           id: `${lvl}-line`,
           type: "line",
           source: lvl,
           paint: {
-            "line-color": ["case", ["boolean", ["feature-state", "selected"], false], "#0b0b0b", ["boolean", ["feature-state", "hover"], false], "#3a3a3a", "#ffffff"],
-            "line-width": ["case", ["boolean", ["feature-state", "selected"], false], 3, ["boolean", ["feature-state", "hover"], false], 2, lvl === "areas" ? 1 : 0.4],
+            "line-color": ["case", ["boolean", ["feature-state", "selected"], false], FOOTPRINT, ["boolean", ["feature-state", "hover"], false], ACCENT, "#5598e7"],
+            "line-width": ["case", ["boolean", ["feature-state", "selected"], false], 3, ["boolean", ["feature-state", "hover"], false], 2.4, lvl === "areas" ? 1.5 : 0.7],
+            "line-opacity": ["case", ["boolean", ["feature-state", "selected"], false], 1, ["boolean", ["feature-state", "hover"], false], 1, 0.7],
           },
         },
         firstSymbol,
@@ -179,7 +190,7 @@ export function CityMap({
       if (hovered) map.setFeatureState({ source: hovered.src, id: hovered.id }, { hover: true });
     };
     for (const lvl of ["areas", "wards"] as const) {
-      for (const layer of [`${lvl}-fill`, `${lvl}-extrude`]) {
+      for (const layer of [`${lvl}-fill`]) {
         map.on("mousemove", layer, (e) => {
           const f = e.features?.[0] as MapGeoJSONFeature | undefined;
           if (!f) return;
@@ -214,7 +225,7 @@ export function CityMap({
       const v = values.get(d.id);
       const title = d.lvl === "areas" ? `${d.props.name}` : `${d.props.name}`;
       const sub = d.lvl === "areas" ? `${d.props.corporations ?? ""} · assembly constituency area` : `Ward in ${d.props.ac} · ${d.props.corporation} corporation`;
-      setTip({ x: d.x, y: d.y, w: ref.current?.clientWidth ?? 600, title, sub, value: formatMetric(v?.value ?? null, metric), n: v ? `${v.n.toLocaleString("en-IN")} records` : "no records" });
+      setTip({ x: d.x, y: d.y, w: ref.current?.clientWidth ?? 600, title, sub, text: describe(metric, v?.value ?? null, v?.n ?? 0) });
     };
     const onSel = (e: Event) => onSelect((e as CustomEvent).detail);
     const onOpen = (e: Event) => router.push(`/tender/?id=${(e as CustomEvent).detail}`);
@@ -228,47 +239,71 @@ export function CityMap({
     };
   }, [values, metric, onSelect, router]);
 
-  // ---- paint: colours, extrusion, visibility
+  // ---- paint: an outline map. Places are not shaded by value (the ranking beside the map and the
+  // hover sentence carry the numbers); fills light up only on hover, selection or a contractor footprint.
   useEffect(() => {
     const map = mapRef.current;
     if (!ready || !map || !map.getLayer("areas-fill")) return;
-    const ramp = RAMPS[metric.kind];
-    const colorFor = (v: number | null) => {
-      if (v == null) return NO_DATA;
-      let i = 0;
-      while (i < breaks.length && v >= breaks[i]) i++;
-      return ramp[Math.min(ramp.length - 1, Math.round((i / Math.max(1, breaks.length)) * (ramp.length - 1)))];
-    };
-    const maxV = Math.max(1e-9, ...[...values.values()].map((v) => v.value ?? 0));
-    const color: unknown[] = ["match", ["to-string", ["id"]]];
-    const height: unknown[] = ["match", ["to-string", ["id"]]];
-    const opacity: unknown[] = ["match", ["to-string", ["id"]]];
-    for (const [id, v] of values) {
-      color.push(id, colorFor(v.value));
-      opacity.push(id, v.value == null ? 0.18 : 0.78);
-      height.push(id, v.value == null ? 0 : 60 + (v.value / maxV) * (level === "areas" ? 2400 : 1100));
-    }
-    color.push(NO_DATA);
-    height.push(0);
-    opacity.push(0.18);
-    const cExpr = (values.size ? color : NO_DATA) as never;
-    const hExpr = (values.size ? height : 0) as never;
+    const lit = highlight && highlight.size ? [...highlight] : null;
+    const color = (lit ? ["match", ["to-string", ["id"]], lit, FOOTPRINT, ACCENT] : ACCENT) as never;
+    const opacity = [
+      "case",
+      ["boolean", ["feature-state", "selected"], false],
+      0.3,
+      ["boolean", ["feature-state", "hover"], false],
+      0.18,
+      lit ? ["match", ["to-string", ["id"]], lit, 0.4, 0.02] : 0.02,
+    ] as never;
     for (const lvl of ["areas", "wards"] as const) {
       const active = lvl === level;
-      map.setLayoutProperty(`${lvl}-fill`, "visibility", active && !threeD ? "visible" : "none");
-      map.setLayoutProperty(`${lvl}-extrude`, "visibility", active && threeD ? "visible" : "none");
+      map.setLayoutProperty(`${lvl}-fill`, "visibility", active ? "visible" : "none");
       map.setLayoutProperty(`${lvl}-line`, "visibility", active ? "visible" : "none");
       if (active) {
-        map.setPaintProperty(`${lvl}-fill`, "fill-color", cExpr);
-        map.setPaintProperty(`${lvl}-fill`, "fill-opacity", (values.size ? opacity : 0.18) as never);
-        map.setPaintProperty(`${lvl}-extrude`, "fill-extrusion-color", cExpr);
-        map.setPaintProperty(`${lvl}-extrude`, "fill-extrusion-height", hExpr);
+        map.setPaintProperty(`${lvl}-fill`, "fill-color", color);
+        map.setPaintProperty(`${lvl}-fill`, "fill-opacity", opacity);
       }
     }
     map.setLayoutProperty("area-labels", "visibility", level === "areas" ? "visible" : "none");
-    map.easeTo({ pitch: threeD ? 50 : 0, bearing: threeD ? -17 : 0, zoom: threeD ? Math.min(map.getZoom(), level === "areas" ? 10.3 : 11.5) : map.getZoom(), duration: 800 });
-    if (map.getLayer("dots")) map.setLayoutProperty("dots", "visibility", showDots && !threeD ? "visible" : "none");
-  }, [ready, values, breaks, metric, level, threeD, showDots]);
+    if (map.getLayer("dots")) map.setLayoutProperty("dots", "visibility", showDots ? "visible" : "none");
+  }, [ready, level, showDots, highlight]);
+
+  // ---- zoom to the region covered by a filter (who issued the tender / local office)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map || !areaGeo) return;
+    if (!fitKey || !fitIds || !fitIds.length) {
+      if (fitKey === "") map.flyTo({ center: CENTER, zoom: 10.2, duration: 900 });
+      return;
+    }
+    const ids = new Set(fitIds);
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    const visit = (c: unknown): void => {
+      if (Array.isArray(c) && typeof c[0] === "number") {
+        const [x, y] = c as number[];
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      } else if (Array.isArray(c)) c.forEach(visit);
+    };
+    for (const f of areaGeo.features) if (ids.has(String(f.properties.ac_no))) visit((f.geometry as { coordinates: unknown }).coordinates);
+    if (!Number.isFinite(minX)) return;
+    const w = ref.current?.clientWidth ?? 800;
+    map.fitBounds(
+      [
+        [minX, minY],
+        [maxX, maxY],
+      ],
+      { padding: { top: 70, bottom: 60, left: 30, right: w > 640 ? 270 : 30 }, maxZoom: 13, duration: 1000 },
+    );
+  }, [ready, fitKey, areaGeo]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ---- reset view
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map || !resetCmd) return;
+    map.flyTo({ center: CENTER, zoom: 10.2, duration: 900 });
+  }, [ready, resetCmd]);
 
   // ---- tender dots (placed at the named ward, jittered deterministically)
   useEffect(() => {
@@ -288,8 +323,8 @@ export function CityMap({
       feats.push({ type: "Feature", properties: { nit: r.nit, g }, geometry: { type: "Point", coordinates: [c[0] + Math.cos(ang) * rad, c[1] + Math.sin(ang) * rad] } });
     }
     (map.getSource("dots") as GeoJSONSource).setData({ type: "FeatureCollection", features: feats } as never);
-    map.setLayoutProperty("dots", "visibility", showDots && !threeD ? "visible" : "none");
-  }, [ready, rows, wardGeo, showDots, threeD]);
+    map.setLayoutProperty("dots", "visibility", showDots ? "visible" : "none");
+  }, [ready, rows, wardGeo, showDots]);
 
   // ---- selection highlight + fly
   const prevSel = useRef<MapSelection>(null);
@@ -310,7 +345,15 @@ export function CityMap({
     <div className="relative h-full w-full">
       {/* maplibre's CSS sets position:relative on the container, so size it explicitly */}
       <div ref={ref} style={{ width: "100%", height: "100%" }} aria-label="Map of Bengaluru" role="region" />
-      {!ready && <div className="absolute inset-0 flex items-center justify-center text-sm text-muted">Loading the map…</div>}
+      {!ready && !failed && <div className="absolute inset-0 flex items-center justify-center text-sm text-muted">Loading the map…</div>}
+      {failed && (
+        <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-ink-2">
+          <p className="max-w-sm">
+            Your browser couldn&apos;t start the interactive map (it needs WebGL). Everything else on this page still works: the
+            ranking beside the map, the search box and all the charts below. Reloading the page or trying another browser usually fixes it.
+          </p>
+        </div>
+      )}
       {tip && (
         <div
           className="pointer-events-none absolute z-10 w-64 rounded-md border border-line bg-surface p-3 text-xs shadow-lg"
@@ -318,10 +361,8 @@ export function CityMap({
         >
           <div className="font-semibold text-ink text-sm">{tip.title}</div>
           <div className="text-muted">{tip.sub}</div>
-          <div className="mt-1.5 text-ink">
-            {metric.label}: <strong>{tip.value}</strong>
-          </div>
-          <div className="text-muted">{tip.n} · click for the full profile</div>
+          <div className="mt-1.5 text-ink leading-snug">{tip.text}</div>
+          <div className="mt-1 text-muted">Click for the full profile</div>
         </div>
       )}
     </div>
