@@ -198,6 +198,8 @@ export type TenderDoc = {
   sources: SourceLink[];
   portal_url: string;
   flags: FlagStub[];
+  /** The named place the title points at, matched with OpenStreetMap; null when only the ward is known. */
+  location?: { lat: number; lon: number; name: string; kind: string; others: number; source: string } | null;
 };
 
 export type TenderStub = {

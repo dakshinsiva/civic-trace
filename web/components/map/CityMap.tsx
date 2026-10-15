@@ -12,6 +12,7 @@ import { Icon } from "@/components/Icon";
 
 import { computeStats, describe, METRICS, metricValue, type AreaStat, type MetricKey } from "@/lib/areaStats";
 import type { Fact } from "@/lib/facts";
+import { contains, type Geometry } from "@/lib/places";
 import { useJson } from "@/lib/useJson";
 
 type FC = { type: "FeatureCollection"; attribution?: string; features: { type: "Feature"; properties: Record<string, unknown>; geometry: unknown }[] };
@@ -45,6 +46,7 @@ export function CityMap({
   fitKey = "",
   fitIds = null,
   names = {},
+  dotRows,
 }: {
   rows: Fact[];
   metricKey: MetricKey;
@@ -62,6 +64,8 @@ export function CityMap({
   fitIds?: string[] | null;
   /** Supplier id → name, for the contract card. */
   names?: Record<string, string>;
+  /** Contracts to draw as dots, when not all of `rows` (e.g. only the selected ward's). */
+  dotRows?: Fact[];
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MLMap | null>(null);
@@ -78,6 +82,8 @@ export function CityMap({
   const metric = METRICS.find((m) => m.key === metricKey)!;
 
   const byNit = useMemo(() => new Map(rows.map((r) => [r.nit, r])), [rows]);
+  const wardNames = useMemo(() => new Map((wardGeo?.features ?? []).map((f) => [String(f.properties.key), String(f.properties.name)])), [wardGeo]);
+  const wardLabel = (key: string | null) => (key && wardNames.has(key) ? `${wardNames.get(key)} ward` : undefined);
   const areaStats = useMemo(() => computeStats(rows, (r) => (r.area == null ? null : String(r.area))), [rows]);
   const wardStats = useMemo(() => computeStats(rows, (r) => r.ward), [rows]);
   const pop = useMemo(() => {
@@ -120,7 +126,7 @@ export function CityMap({
         zoom: 10.2,
         minZoom: 9,
         maxZoom: 16,
-        attributionControl: { compact: true, customAttribution: "Boundaries: GBA delimitation 2025 via OpenCity (public domain) · Tenders: KPPP" },
+        attributionControl: { compact: true, customAttribution: "Boundaries: GBA delimitation 2025 via OpenCity (public domain) · Tenders: KPPP · Places: © OpenStreetMap contributors" },
         // Embedded in a scrolling page: plain scroll moves the page; ctrl/⌘+scroll or two fingers move the map.
         cooperativeGestures: true,
         });
@@ -204,8 +210,9 @@ export function CityMap({
         ],
         "circle-color": ["match", ["get", "g"], "1", DOT_COLORS["1"], "2", DOT_COLORS["2"], "3+", DOT_COLORS["3+"], DOT_COLORS.unknown],
         "circle-stroke-color": ["case", ["boolean", ["feature-state", "hover"], false], dark ? "#ffffff" : "#0a0b0d", dark ? "rgba(7,8,10,0.8)" : "#ffffff"],
-        "circle-stroke-width": ["case", ["boolean", ["feature-state", "hover"], false], 2.5, 1],
-        "circle-opacity": 0.92,
+        // Dots at a named place are solid with a ring; "somewhere in the ward" dots are faded, without one.
+        "circle-stroke-width": ["case", ["boolean", ["feature-state", "hover"], false], 2.5, ["==", ["get", "exact"], 1], 1.2, 0],
+        "circle-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 1, ["==", ["get", "exact"], 1], 0.95, 0.5],
       },
     });
 
@@ -355,28 +362,42 @@ export function CityMap({
     map.flyTo({ center: CENTER, zoom: 10.2, duration: 900 });
   }, [ready, resetCmd]);
 
-  // ---- tender dots (placed at the named ward, jittered deterministically)
+  // ---- tender dots: at the named place when the title names one (OpenStreetMap); otherwise somewhere inside the
+  // ward, offset deterministically from its centre and kept within its boundary, and drawn as approximate.
   useEffect(() => {
     const map = mapRef.current;
     if (!ready || !map || !wardGeo || !map.getSource("dots")) return;
-    const centers = new Map<string, [number, number]>();
-    for (const f of wardGeo.features) centers.set(String(f.properties.key), [Number(f.properties.cx), Number(f.properties.cy)]);
+    const wards = new Map<string, { c: [number, number]; g: Geometry | undefined }>();
+    for (const f of wardGeo.features) wards.set(String(f.properties.key), { c: [Number(f.properties.cx), Number(f.properties.cy)], g: f.geometry as Geometry });
     const feats = [];
-    for (const r of rows) {
-      if (!r.ward || !r.selection) continue;
-      const c = centers.get(r.ward);
-      if (!c) continue;
-      const h = hash(r.nit);
-      const ang = ((h % 3600) / 3600) * Math.PI * 2;
-      const rad = 0.0006 + ((h >>> 12) % 1000) / 1000 * 0.0028;
+    for (const r of dotRows ?? rows) {
+      if (!r.selection) continue;
       const g = r.bidders == null ? "unknown" : r.bidders <= 1 ? "1" : r.bidders === 2 ? "2" : "3+";
       // Base radius from the winning price: ₹1 lakh → 2, ₹1 crore → 5, ₹100 crore → 8 (log scale).
       const size = r.bid ? Math.min(8, 2 + 1.5 * Math.log10(Math.max(1, r.bid / 1e5))) : 2;
-      feats.push({ type: "Feature", properties: { nit: r.nit, g, r: size }, geometry: { type: "Point", coordinates: [c[0] + Math.cos(ang) * rad, c[1] + Math.sin(ang) * rad] } });
+      let pt: [number, number] | null = r.site ? [r.site.lon, r.site.lat] : null;
+      if (!pt && r.ward) {
+        const w = wards.get(r.ward);
+        if (!w) continue;
+        const h = hash(r.nit);
+        pt = w.c;
+        for (let k = 0; k < 6; k++) {
+          const hk = hash(h + k * 7919);
+          const ang = ((hk % 3600) / 3600) * Math.PI * 2;
+          const rad = 0.0005 + (((hk >>> 12) % 1000) / 1000) * 0.0025;
+          const cand: [number, number] = [w.c[0] + Math.cos(ang) * rad, w.c[1] + Math.sin(ang) * rad];
+          if (!w.g || contains(w.g, cand)) {
+            pt = cand;
+            break;
+          }
+        }
+      }
+      if (!pt) continue;
+      feats.push({ type: "Feature", properties: { nit: r.nit, g, r: size, exact: r.site ? 1 : 0 }, geometry: { type: "Point", coordinates: pt } });
     }
     (map.getSource("dots") as GeoJSONSource).setData({ type: "FeatureCollection", features: feats } as never);
     map.setLayoutProperty("dots", "visibility", showDots ? "visible" : "none");
-  }, [ready, rows, wardGeo, showDots]);
+  }, [ready, rows, dotRows, wardGeo, showDots]);
 
   // ---- selection highlight + fly
   const prevSel = useRef<MapSelection>(null);
@@ -420,6 +441,7 @@ export function CityMap({
           <ContractCard
             fact={byNit.get(dot.nit)!}
             supplierName={names[String(byNit.get(dot.nit)!.supplier)]}
+            where={wardLabel(byNit.get(dot.nit)!.ward)}
             footer={
               dot.pinned ? (
                 <div className="mt-3 flex items-center gap-2">

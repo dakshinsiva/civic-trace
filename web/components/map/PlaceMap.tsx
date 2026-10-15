@@ -20,6 +20,8 @@ export function PlaceMap({ kind, id }: { kind: "area" | "ward"; id: string }) {
   const rows = useMemo(() => (data ? decodeFacts(data) : []), [data]);
   const level = kind === "area" ? "areas" : "wards";
   const selection = useMemo<MapSelection>(() => ({ level, id }), [level, id]);
+  // Only this place's contracts as dots; the outlines around it stay for context.
+  const dotRows = useMemo(() => rows.filter((r) => (kind === "ward" ? r.ward === id : String(r.area) === id)), [rows, kind, id]);
 
   const onSelect = useCallback(
     (s: MapSelection) => {
@@ -41,7 +43,7 @@ export function PlaceMap({ kind, id }: { kind: "area" | "ward"; id: string }) {
         {error ? (
           <p className="p-6 text-body-m text-muted">The map data is not available in this release.</p>
         ) : (
-          <CityMap rows={rows} metricKey="tenders" level={level} showDots selection={selection} onSelect={onSelect} names={data?.suppliers ?? {}} />
+          <CityMap rows={rows} dotRows={dotRows} metricKey="tenders" level={level} showDots selection={selection} onSelect={onSelect} names={data?.suppliers ?? {}} />
         )}
       </div>
       <figcaption className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-line px-4 py-3 text-body-s text-ink-2">
@@ -52,6 +54,14 @@ export function PlaceMap({ kind, id }: { kind: "area" | "ward"; id: string }) {
             {g === "1" ? "Only 1 company bid" : g === "2" ? "2 companies" : g === "3+" ? "3 or more" : "Not published"}
           </span>
         ))}
+        <span className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-ink-2 ring-1 ring-ink" aria-hidden />
+          at the place named in the tender
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-ink-2 opacity-50" aria-hidden />
+          somewhere in the ward (approximate)
+        </span>
         <span className="text-muted">· Bigger dot = bigger winning price · Point at a dot for the contract, click to open it</span>
       </figcaption>
     </figure>

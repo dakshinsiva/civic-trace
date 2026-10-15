@@ -3,34 +3,15 @@
 import { useRouter } from "next/navigation";
 import { useId, useMemo, useState } from "react";
 
-import { matchesPlace as matches } from "@/lib/places";
+import { contains, matchesPlace as matches, type Geometry } from "@/lib/places";
 import { useJson } from "@/lib/useJson";
 
 import { Icon } from "./Icon";
 
-type Ring = [number, number][];
-type Geometry = { type: "Polygon"; coordinates: Ring[] } | { type: "MultiPolygon"; coordinates: Ring[][] };
 type Geo<P> = { features: { properties: P; geometry?: Geometry }[] };
 type WardProps = { key: string; name: string; name_kn?: string; ac_no: number; ac: string; corporation: string };
 type AreaProps = { ac_no: number; name: string; wards: number };
 type Hit = { kind: "ward" | "area"; id: string; ac: number; name: string; alt?: string; sub: string };
-
-/** Ray-casting point-in-polygon on [lon, lat] rings (holes count as outside). */
-function inRings(pt: [number, number], rings: Ring[]): boolean {
-  let inside = false;
-  for (const ring of rings) {
-    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-      const [xi, yi] = ring[i];
-      const [xj, yj] = ring[j];
-      if (yi > pt[1] !== yj > pt[1] && pt[0] < ((xj - xi) * (pt[1] - yi)) / (yj - yi) + xi) inside = !inside;
-    }
-  }
-  return inside;
-}
-function contains(g: Geometry | undefined, pt: [number, number]): boolean {
-  if (!g) return false;
-  return g.type === "Polygon" ? inRings(pt, g.coordinates) : g.coordinates.some((poly) => inRings(pt, poly));
-}
 
 /** "Find your area": search wards and constituency areas (English or Kannada), or use the device location. */
 export function LocalitySearch() {

@@ -3,7 +3,7 @@
 export type FactsFile = {
   n: number;
   rule_bits: Record<string, number>;
-  dict: Record<"buyer" | "division" | "category" | "fy" | "month" | "tender_type" | "status", string[]> & { ward?: string[] };
+  dict: Record<"buyer" | "division" | "category" | "fy" | "month" | "tender_type" | "status", string[]> & { ward?: string[]; site?: string[] };
   cols: {
     buyer: number[];
     division: number[];
@@ -25,6 +25,9 @@ export type FactsFile = {
     flags: number[];
     ac?: (number | null)[];
     ward?: (number | null)[];
+    lat?: (number | null)[];
+    lon?: (number | null)[];
+    site?: (number | null)[];
   };
   suppliers: Record<string, string>;
 };
@@ -52,6 +55,8 @@ export type Fact = {
   area: number | null;
   /** Ward key, e.g. "East-14", when a ward is named in the tender. */
   ward: string | null;
+  /** The named place the title points at (OpenStreetMap), when there is one; otherwise only the ward is known. */
+  site: { name: string; lat: number; lon: number } | null;
 };
 
 export function decodeFacts(f: FactsFile): Fact[] {
@@ -80,6 +85,10 @@ export function decodeFacts(f: FactsFile): Fact[] {
       flags: c.flags[i],
       area: c.ac?.[i] ?? null,
       ward: c.ward && c.ward[i] != null && d.ward ? d.ward[c.ward[i] as number] : null,
+      site:
+        c.lat?.[i] != null && c.lon?.[i] != null && c.site?.[i] != null && d.site
+          ? { name: d.site[c.site[i] as number], lat: c.lat[i] as number, lon: c.lon[i] as number }
+          : null,
     };
   }
   return out;

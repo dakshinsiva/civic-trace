@@ -25,7 +25,7 @@ from . import RAW_DIR, __version__
 
 USER_AGENT = (
     f"CivicTrace/{__version__} (open-source procurement research; "
-    "https://github.com/civictrace; polite crawler, 1 req/s)"
+    "https://github.com/dakshinsiva/civic-trace; at most 1 request/second)"
 )
 
 
@@ -101,6 +101,7 @@ class PoliteClient:
         method: str = "GET",
         json_body: dict | None = None,
         params: dict | None = None,
+        form: dict | None = None,
         retry_statuses: tuple[int, ...] = (500, 502, 503, 504),
         allow_empty: bool = False,
     ) -> Fetched:
@@ -114,7 +115,7 @@ class PoliteClient:
         for attempt in range(self.retries + 1):
             self._wait()
             try:
-                resp = self._client.request(method, url, json=json_body, params=params)
+                resp = self._client.request(method, url, json=json_body, params=params, data=form)
                 body = resp.content
                 if resp.status_code in retry_statuses or (not body and not allow_empty):
                     raise TransientError(f"{resp.status_code} len={len(body)}")

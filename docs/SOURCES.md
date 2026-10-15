@@ -40,6 +40,15 @@ Urban) and the council of ministers, which includes the Greater Bengaluru Develo
 undated, so the snapshot date is the only evidence of when a portfolio was held. These are stored for reference and are
 never published on their own.
 
+## OpenStreetMap — named places
+
+Fetched once with `civictrace ingest osm` from the Overpass API (with public mirrors when the main server is busy),
+at most one request per second: named water bodies, parks, roads, schools, hospitals, places of worship, burial
+grounds, stations, junctions, markets and libraries inside Greater Bengaluru, as points (`out center tags`). Saved to
+`data/geo/raw/osm-places.json` (about 33,000 features). Licence: ODbL; attribution "© OpenStreetMap contributors" is
+shown on the map and in the README. The Overpass server refuses requests whose User-Agent looks like an anonymous
+crawler, so CivicTrace's User-Agent names the project and its repository.
+
 ## Ruled out or deferred
 
 | Source | Status |

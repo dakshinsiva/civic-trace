@@ -24,7 +24,9 @@ the ward.*
 1. **Find your area.** Type your ward or neighbourhood, in English or Kannada, tap **Use my location**, or press
    **⌘K** (Ctrl+K) anywhere to search places, tenders and contractors.
 2. **Look at the map.** Each dot is a contract. Point at one, or tap it on a phone, to see what the work was, who won
-   it, the winning price, the government's own estimate and how many companies bid.
+   it, the winning price, the government's own estimate and how many companies bid. A ringed dot sits on the lake,
+   park, road or building named in the tender; a faded dot is only known to be somewhere in its ward. Pick a ward or
+   area and the map shows only that place's contracts.
 3. **Compare areas.** The list beside the map ranks places by winning bids per resident, by how often only one company
    bid, and more. The charts below the map follow the area you pick.
 4. **Read the warning signs.** Every tender is checked for six patterns that can point to a rigged tender. Each warning
@@ -72,6 +74,7 @@ docs/       SOURCES.md (what the portal provides, verified), CORRECTIONS.md, ima
 ```bash
 ./tasks.sh ingest      # resumable; ≤1 request/second; the full backfill takes about a day
 (cd pipeline && uv run civictrace ingest geo)   # official ward/corporation boundaries (OpenCity, public domain)
+(cd pipeline && uv run civictrace ingest osm)   # named lakes, parks, roads and landmarks (OpenStreetMap, ODbL)
 ./tasks.sh status      # progress
 ./tasks.sh data        # snapshot → rules → export → build site → verify no relationship data in public build
 ./tasks.sh test        # pipeline tests, claims validation, web type-check
@@ -117,6 +120,12 @@ Tenders are placed on the map by their engineering division (BBMP divisions foll
 official ward names found in their titles, with spelling-tolerant matching. Ward numbers are ignored because titles mix
 numbering schemes, and zone-wide departments are left off the map rather than guessed. About 75% of tenders get an
 area and about 40% a ward. See `pipeline/civictrace/geo.py` and `pipeline/tests/test_geo.py`.
+
+KPPP publishes no worksite coordinates. When a title names a place, such as "Annual Maintenance of Puttenahalli
+Lake", the dot is put on that place using OpenStreetMap, but only when the place lies inside the tender's own ward
+or area, the title says what kind of place it is ("lake", "park", "road"), and the name picks out one place. About
+5% of tenders (673) are placed this way, mostly lakes and roads. Every other dot is approximate: inside its ward, not
+at the worksite. See `pipeline/civictrace/sites.py` and `pipeline/tests/test_sites.py`.
 
 ## The warning signs (rules 1–6)
 
@@ -165,6 +174,9 @@ KPPP's copyright policy allows free reproduction of its material if it is reprod
 acknowledged. CivicTrace uses the portal's public JSON service at no more than one request per second, archives every
 response with a sha256 hash, and never bypasses CAPTCHAs or logins. See `docs/SOURCES.md`.
 
+Place locations come from OpenStreetMap: © OpenStreetMap contributors, available under the
+[Open Database Licence](https://opendatacommons.org/licenses/odbl/). The map credits them too.
+
 ## Built by
 
 Dakshin Raj Siva — [github.com/dakshinsiva](https://github.com/dakshinsiva) · [LinkedIn](https://www.linkedin.com/in/dakshinsiva/) ·
@@ -172,4 +184,5 @@ dakshinrajsiva@gmail.com
 
 ## Licence
 
-Code: MIT. Data: as published by the Government of Karnataka (KPPP), reproduced with acknowledgement.
+Code: MIT. Data: as published by the Government of Karnataka (KPPP), reproduced with acknowledgement. Place
+locations: © OpenStreetMap contributors (ODbL).

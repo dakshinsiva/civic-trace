@@ -24,7 +24,18 @@ function vsEstimate(bid: number | null, ecv: number | null): { text: string; ton
  * Overview of one contract, for the map's dots and the price chart. Figures come from the explorer's facts at once;
  * the title, winner's name and warning-sign names arrive with the tender record.
  */
-export function ContractCard({ fact, supplierName, footer }: { fact: Fact; supplierName?: string; footer?: React.ReactNode }) {
+export function ContractCard({
+  fact,
+  supplierName,
+  where,
+  footer,
+}: {
+  fact: Fact;
+  supplierName?: string;
+  /** The ward the contract is in, for contracts without a named place ("J.P Nagar ward"). */
+  where?: string;
+  footer?: React.ReactNode;
+}) {
   const { data } = useRecord<TenderDoc>("tenders", String(fact.nit));
   const g = bidderGroup(fact.bidders);
   const est = vsEstimate(fact.bid, fact.ecv);
@@ -41,6 +52,20 @@ export function ContractCard({ fact, supplierName, footer }: { fact: Fact; suppl
       <div className="mt-0.5 truncate text-body-s text-muted">
         {fact.buyer} · {fact.division}
       </div>
+      {fact.site ? (
+        <div className="mt-2 flex items-start gap-1.5 text-body-s text-ink">
+          <Icon name="map-pin" size={14} className="mt-0.5 text-accent" />
+          <span>
+            At <strong className="font-medium">{fact.site.name}</strong>
+            <span className="text-muted"> · named in the title, located with OpenStreetMap</span>
+          </span>
+        </div>
+      ) : where ? (
+        <div className="mt-2 flex items-start gap-1.5 text-body-s text-muted">
+          <Icon name="map-pin" size={14} className="mt-0.5" />
+          <span>Somewhere in {where} · approximate: the tender names no exact place</span>
+        </div>
+      ) : null}
 
       <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2.5">
         <div>

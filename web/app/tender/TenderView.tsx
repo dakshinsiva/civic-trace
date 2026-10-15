@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
+import { Icon } from "@/components/Icon";
 import { Term } from "@/components/Term";
 import { ErrorNote, FlagList, Loading, PageTitle, Section } from "@/components/ui";
 import { date, datetime, inr, selectionLabel, statusLabel } from "@/lib/format";
@@ -61,6 +62,20 @@ export function TenderView() {
         <div role="note" className="rounded-md border border-notice-border bg-notice-bg px-4 py-3 text-sm text-notice-ink">
           <strong>Not fully downloaded yet.</strong> Only the portal&apos;s list entry for this tender is in this release; its full
           details will be added in a later update.
+        </div>
+      )}
+
+      {t.location && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-body-m">
+          <span className="flex items-center gap-1.5 text-ink">
+            <Icon name="map-pin" size={16} className="text-accent" />
+            At <strong className="font-medium">{t.location.name}</strong>
+            {t.location.others > 0 && <span className="text-muted">and {t.location.others} other place{t.location.others > 1 ? "s" : ""} named in the title</span>}
+          </span>
+          <a href={`https://www.openstreetmap.org/?mlat=${t.location.lat}&mlon=${t.location.lon}#map=17/${t.location.lat}/${t.location.lon}`} target="_blank" rel="noopener noreferrer" className="text-body-s">
+            View on OpenStreetMap
+          </a>
+          <span className="text-body-s text-muted">Located from the name in the title; the portal publishes no exact worksite.</span>
         </div>
       )}
 

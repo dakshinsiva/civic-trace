@@ -45,3 +45,24 @@ export function wardSlug(name: string, key: string): string {
 export function wardHref(name: string, key: string): string {
   return `/wards/${wardSlug(name, key)}/`;
 }
+
+export type Ring = [number, number][];
+export type Geometry = { type: "Polygon"; coordinates: Ring[] } | { type: "MultiPolygon"; coordinates: Ring[][] };
+
+/** Ray-casting point-in-polygon on [lon, lat] rings (holes count as outside). */
+function inRings(pt: [number, number], rings: Ring[]): boolean {
+  let inside = false;
+  for (const ring of rings) {
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const [xi, yi] = ring[i];
+      const [xj, yj] = ring[j];
+      if (yi > pt[1] !== yj > pt[1] && pt[0] < ((xj - xi) * (pt[1] - yi)) / (yj - yi) + xi) inside = !inside;
+    }
+  }
+  return inside;
+}
+export function contains(g: Geometry | undefined, pt: [number, number]): boolean {
+  if (!g) return false;
+  return g.type === "Polygon" ? inRings(pt, g.coordinates) : g.coordinates.some((poly) => inRings(pt, poly));
+}
+

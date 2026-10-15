@@ -268,6 +268,19 @@ def export_all(conn: sqlite3.Connection, out: Path, include_relationships: bool 
             "sources": sources,
             "portal_url": kppp.PORTAL,
             "flags": [flag_stub(f) for f in flags_by_call.get(nit, [])],
+            # The named place the title points at (OpenStreetMap), or None when only the ward is known.
+            "location": (
+                {
+                    "lat": float(row["site_lat"]),
+                    "lon": float(row["site_lon"]),
+                    "name": row["site_name"],
+                    "kind": row["site_kind"],
+                    "others": int(row["site_others"] or 0),
+                    "source": "OpenStreetMap",
+                }
+                if "site_lat" in row and not pd.isna(row["site_lat"])
+                else None
+            ),
         }
         tender_buckets[tender_bucket(nit)][str(nit)] = doc
         tender_index.append(
@@ -511,6 +524,13 @@ def _facts(calls: pd.DataFrame, flags: list[dict], suppressed_suppliers: set[int
         wd, widx = enc_nullable(df["ward_key"])
         out["dict"]["ward"] = wd
         out["cols"]["ward"] = widx
+    if "site_lat" in df:
+        # Exact place where the title names one (OpenStreetMap); null means "somewhere in the ward".
+        out["cols"]["lat"] = [None if pd.isna(v) else float(v) for v in df["site_lat"]]
+        out["cols"]["lon"] = [None if pd.isna(v) else float(v) for v in df["site_lon"]]
+        sd, sidx = enc_nullable(df["site_name"])
+        out["dict"]["site"] = sd
+        out["cols"]["site"] = sidx
     names = (
         df[df["supplier_id"].notna()].groupby("supplier_id")["supplier_name"].last().to_dict()
     )
@@ -532,9 +552,11 @@ def _locate_calls(calls: pd.DataFrame, out: Path) -> dict:
     calls["ac_no"] = [p["ac_no"] for p in placed]
     calls["ward_key"] = [p["ward_key"] for p in placed]
     calls["geo_method"] = [p["geo_method"] for p in placed]
+    site_info = _place_at_sites(calls)
     assets = build_geo_assets(out / "geo")
     n = len(calls) or 1
     return {
+        "sites": site_info,
         "available": True,
         "attribution": ATTRIBUTION,
         "assets": assets,
@@ -542,6 +564,34 @@ def _locate_calls(calls: pd.DataFrame, out: Path) -> dict:
         "share_with_ward": round(float(calls["ward_key"].notna().mean()), 4),
         "share_zonal": round(sum(1 for p in placed if p["geo_method"] == "zonal") / n, 4),
     }
+
+
+def _place_at_sites(calls: pd.DataFrame) -> dict:
+    """Put calls whose title names a lake, park, road or landmark at that place (see sites.py).
+
+    A call that had no ward but whose place lies in one joins that ward. Without the OpenStreetMap
+    download (`civictrace ingest osm`) nothing changes and every dot stays approximate.
+    """
+    from .geo import load_wards
+    from .sites import ATTRIBUTION, OSM_RAW, SiteLocator, load_features
+
+    for col in ("site_lat", "site_lon", "site_name", "site_kind", "site_others"):
+        calls[col] = None
+    if not OSM_RAW.exists():
+        return {"available": False}
+    loc = SiteLocator.build(load_features(), load_wards(with_geometry=True))
+    found = 0
+    for i, (title, ward, ac) in enumerate(zip(calls["title"], calls["ward_key"], calls["ac_no"])):
+        site = loc.locate(title, None if pd.isna(ward) else ward, None if pd.isna(ac) else int(ac))
+        if not site:
+            continue
+        found += 1
+        idx = calls.index[i]
+        calls.at[idx, "site_lat"], calls.at[idx, "site_lon"] = round(site.lat, 5), round(site.lon, 5)
+        calls.at[idx, "site_name"], calls.at[idx, "site_kind"], calls.at[idx, "site_others"] = site.name, site.kind, site.others
+        if pd.isna(ward) and site.ward_key:
+            calls.at[idx, "ward_key"], calls.at[idx, "ac_no"], calls.at[idx, "geo_method"] = site.ward_key, site.ac_no, "site"
+    return {"available": True, "attribution": ATTRIBUTION, "calls_at_named_place": found}
 
 
 def _wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float] | None:

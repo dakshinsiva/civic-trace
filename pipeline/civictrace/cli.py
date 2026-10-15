@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import typer
@@ -160,6 +161,29 @@ def ingest_geo() -> None:
             if f.status == 200:
                 (GEO_RAW / name).write_bytes(f.body)
             typer.echo(f"{name}: HTTP {f.status}, {len(f.body):,} bytes")
+
+
+@ingest_app.command("osm")
+def ingest_osm() -> None:
+    """Download named places in Bengaluru from OpenStreetMap (one Overpass request), for placing contracts."""
+    from .http import PoliteClient
+    from .sites import OSM_RAW, OVERPASS_URLS, QUERY
+
+    OSM_RAW.parent.mkdir(parents=True, exist_ok=True)
+    with PoliteClient(raw_dir=OSM_RAW.parent.parent / "archive", min_interval=1.0, timeout=300, retries=0) as client:
+        for url in OVERPASS_URLS:
+            try:
+                f = client.fetch(url, archive_as="osm-places", method="POST", form={"data": QUERY})
+            except Exception as exc:  # timeouts and connection errors: try the next server
+                typer.echo(f"{url}: {exc.__class__.__name__}")
+                continue
+            ok = f.status == 200 and f.body.lstrip().startswith(b"{")
+            typer.echo(f"{url}: HTTP {f.status}, {len(f.body):,} bytes")
+            if ok:
+                OSM_RAW.write_bytes(f.body)
+                typer.echo(f"osm-places: {len(json.loads(f.body).get('elements', [])):,} features")
+                return
+    raise typer.Exit(1)
 
 
 @ingest_app.command("kla")

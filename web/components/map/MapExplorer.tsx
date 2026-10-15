@@ -76,7 +76,10 @@ export function MapExplorer({
   const metric = METRICS.find((m) => m.key === measure) ?? METRICS[1];
   const activeQuick = QUICK_VIEWS.find((q) => q.metric === measure && q.level === level);
 
-  const selection: MapSelection = level === "wards" && wardSel ? { level: "wards", id: wardSel } : area ? { level: "areas", id: area } : null;
+  const selection = useMemo<MapSelection>(
+    () => (level === "wards" && wardSel ? { level: "wards", id: wardSel } : area ? { level: "areas", id: area } : null),
+    [level, wardSel, area],
+  );
   const onSelect = useCallback(
     (s: MapSelection) => {
       if (!s) return;
@@ -185,6 +188,12 @@ export function MapExplorer({
         ].slice(0, 8)
       : [];
 
+  // With a place picked, show only its contracts as dots; with nothing picked, the whole city's.
+  const dotRows = useMemo(() => {
+    if (!selection) return rows;
+    return selection.level === "wards" ? rows.filter((r) => r.ward === selection.id) : rows.filter((r) => String(r.area) === selection.id);
+  }, [rows, selection]);
+
   const sel = selection
     ? selection.level === "areas"
       ? { stat: stats?.areas.get(selection.id), props: areaFeat(selection.id), kind: "Area" as const }
@@ -254,6 +263,7 @@ export function MapExplorer({
             fitKey={focusFilter}
             fitIds={fitIds}
             names={names}
+            dotRows={dotRows}
           />
 
           {/* Top-left: detail level, layers, search */}
@@ -348,6 +358,16 @@ export function MapExplorer({
                   <span className="h-3.5 w-3.5 rounded-full bg-ink-2" />
                 </span>
                 Bigger dot = bigger winning price
+              </p>
+              <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-full bg-ink-2 ring-1 ring-ink" aria-hidden />
+                  At the place named in the tender
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-full bg-ink-2 opacity-50" aria-hidden />
+                  Somewhere in the ward (approximate)
+                </span>
               </p>
             </div>
           )}
