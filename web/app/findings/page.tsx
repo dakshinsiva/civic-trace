@@ -224,7 +224,7 @@ export default function FindingsPage() {
           </div>
           <p className="text-xs text-muted mt-3 max-w-3xl">
             Bidders are matched by the name the portal prints, since it publishes no company numbers. A firm spelled two ways
-            counts as two firms, which makes these checks find less, not more. Related firms bidding under different names
+            counts as two firms, which generally makes these checks find less, not more. Related firms bidding under different names
             can&apos;t be seen at all.
           </p>
         </section>

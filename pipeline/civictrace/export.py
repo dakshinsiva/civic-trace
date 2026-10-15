@@ -716,7 +716,7 @@ def _findings(calls: pd.DataFrame, flags: list[dict], rule_summary: dict, cfg: d
 # Bid-rigging screens from the OECD's "Guidelines for fighting bid rigging" checklist: the same
 # firms meeting again and again, and a firm that always loses to the same rival (a cover bidder).
 # Aggregates only. Bidders are identified by name (the comparative statement has no IDs), so a
-# firm spelled two ways counts as two firms, which can only make the screens find less.
+# firm spelled two ways counts as two firms, which generally makes the screens find less.
 SCREEN_MIN_MEETINGS = 5
 _RANK_NUM = re.compile(r"\d+")
 
