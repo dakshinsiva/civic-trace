@@ -12,6 +12,7 @@ import { areaHref, matchesPlace, wardHref } from "@/lib/places";
 import { SCROLL_TO_MAP_KEY } from "../CommandPalette";
 import { Icon } from "../Icon";
 import { CityMap, type Level, type MapSelection } from "./CityMap";
+import { scrollToMap } from "./MapLink";
 
 type Geo = { features: { properties: Record<string, unknown> }[] } | null;
 type Stats = { areas: Map<string, AreaStat>; wards: Map<string, AreaStat>; areaGeo: Geo; wardGeo: Geo };
@@ -116,7 +117,7 @@ export function MapExplorer({
     try {
       if (sessionStorage.getItem(SCROLL_TO_MAP_KEY)) {
         sessionStorage.removeItem(SCROLL_TO_MAP_KEY);
-        setTimeout(() => document.getElementById("map")?.scrollIntoView({ behavior: "smooth", block: "end" }), 300);
+        setTimeout(scrollToMap, 300);
       }
     } catch {
       /* storage blocked */
@@ -366,7 +367,7 @@ export function MapExplorer({
                 </span>
                 <span className="flex items-center gap-1.5">
                   <span className="h-2.5 w-2.5 rounded-full bg-ink-2 opacity-50" aria-hidden />
-                  Somewhere in the ward (approximate)
+                  Somewhere in the ward or area (approximate)
                 </span>
               </p>
             </div>

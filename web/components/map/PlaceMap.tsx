@@ -60,7 +60,7 @@ export function PlaceMap({ kind, id }: { kind: "area" | "ward"; id: string }) {
         </span>
         <span className="flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-full bg-ink-2 opacity-50" aria-hidden />
-          somewhere in the ward (approximate)
+          somewhere in the ward or area (approximate)
         </span>
         <span className="text-muted">· Bigger dot = bigger winning price · Point at a dot for the contract, click to open it</span>
       </figcaption>

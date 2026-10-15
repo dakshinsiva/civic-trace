@@ -79,11 +79,18 @@ export function CityMap({
   const { data: areaGeo } = useJson<FC>("geo/areas.geojson");
   const { data: wardGeo } = useJson<FC>("geo/wards.geojson");
   const { data: corpGeo } = useJson<FC>("geo/corporations.geojson");
+  // The map's sources and layers are added once the map and both outline files have loaded, in whichever order they
+  // arrive. Effects that draw on those layers wait for this, so they run again as soon as the layers exist: otherwise
+  // a place picked while the outlines were still loading would open with its contract dots missing.
+  const layersReady = ready && !!areaGeo && !!wardGeo;
   const metric = METRICS.find((m) => m.key === metricKey)!;
 
   const byNit = useMemo(() => new Map(rows.map((r) => [r.nit, r])), [rows]);
   const wardNames = useMemo(() => new Map((wardGeo?.features ?? []).map((f) => [String(f.properties.key), String(f.properties.name)])), [wardGeo]);
   const wardLabel = (key: string | null) => (key && wardNames.has(key) ? `${wardNames.get(key)} ward` : undefined);
+  const areaNames = useMemo(() => new Map((areaGeo?.features ?? []).map((f) => [String(f.properties.ac_no), String(f.properties.name)])), [areaGeo]);
+  // Where an approximate dot is: its ward, or for contracts that name only a constituency, the area.
+  const placeLabel = (r: Fact) => wardLabel(r.ward) ?? (r.area != null && areaNames.has(String(r.area)) ? `${areaNames.get(String(r.area))} area` : undefined);
   const areaStats = useMemo(() => computeStats(rows, (r) => (r.area == null ? null : String(r.area))), [rows]);
   const wardStats = useMemo(() => computeStats(rows, (r) => r.ward), [rows]);
   const pop = useMemo(() => {
@@ -299,7 +306,7 @@ export function CityMap({
   // hover sentence carry the numbers); fills light up only on hover, selection or a contractor footprint.
   useEffect(() => {
     const map = mapRef.current;
-    if (!ready || !map || !map.getLayer("areas-fill")) return;
+    if (!layersReady || !map || !map.getLayer("areas-fill")) return;
     const lit = highlight && highlight.size ? [...highlight] : null;
     const ACCENT = accent(darkRef.current);
     const color = (lit ? ["match", ["to-string", ["id"]], lit, FOOTPRINT, ACCENT] : ACCENT) as never;
@@ -322,7 +329,7 @@ export function CityMap({
     }
     map.setLayoutProperty("area-labels", "visibility", level === "areas" ? "visible" : "none");
     if (map.getLayer("dots")) map.setLayoutProperty("dots", "visibility", showDots ? "visible" : "none");
-  }, [ready, level, showDots, highlight]);
+  }, [layersReady, level, showDots, highlight]);
 
   // ---- zoom to the region covered by a filter (who issued the tender / local office)
   useEffect(() => {
@@ -363,12 +370,27 @@ export function CityMap({
   }, [ready, resetCmd]);
 
   // ---- tender dots: at the named place when the title names one (OpenStreetMap); otherwise somewhere inside the
-  // ward, offset deterministically from its centre and kept within its boundary, and drawn as approximate.
+  // ward, or for contracts that name only a constituency, near the area's centre. Those are offset deterministically,
+  // kept within the boundary and drawn as approximate.
   useEffect(() => {
     const map = mapRef.current;
-    if (!ready || !map || !wardGeo || !map.getSource("dots")) return;
-    const wards = new Map<string, { c: [number, number]; g: Geometry | undefined }>();
-    for (const f of wardGeo.features) wards.set(String(f.properties.key), { c: [Number(f.properties.cx), Number(f.properties.cy)], g: f.geometry as Geometry });
+    if (!layersReady || !map || !wardGeo || !areaGeo || !map.getSource("dots")) return;
+    type Place = { c: [number, number]; g: Geometry | undefined };
+    const place = (f: FC["features"][number]): Place => ({ c: [Number(f.properties.cx), Number(f.properties.cy)], g: f.geometry as Geometry });
+    const wards = new Map<string, Place>(wardGeo.features.map((f) => [String(f.properties.key), place(f)]));
+    const areas = new Map<string, Place>(areaGeo.features.map((f) => [String(f.properties.ac_no), place(f)]));
+    // A point near the centre (between `near` and `near + spread` degrees away), inside the boundary when possible.
+    const scatter = (p: Place, nit: number, near: number, spread: number): [number, number] => {
+      const h = hash(nit);
+      for (let k = 0; k < 6; k++) {
+        const hk = hash(h + k * 7919);
+        const ang = ((hk % 3600) / 3600) * Math.PI * 2;
+        const rad = near + (((hk >>> 12) % 1000) / 1000) * spread;
+        const cand: [number, number] = [p.c[0] + Math.cos(ang) * rad, p.c[1] + Math.sin(ang) * rad];
+        if (!p.g || contains(p.g, cand)) return cand;
+      }
+      return p.c;
+    };
     const feats = [];
     for (const r of dotRows ?? rows) {
       if (!r.selection) continue;
@@ -378,32 +400,23 @@ export function CityMap({
       let pt: [number, number] | null = r.site ? [r.site.lon, r.site.lat] : null;
       if (!pt && r.ward) {
         const w = wards.get(r.ward);
-        if (!w) continue;
-        const h = hash(r.nit);
-        pt = w.c;
-        for (let k = 0; k < 6; k++) {
-          const hk = hash(h + k * 7919);
-          const ang = ((hk % 3600) / 3600) * Math.PI * 2;
-          const rad = 0.0005 + (((hk >>> 12) % 1000) / 1000) * 0.0025;
-          const cand: [number, number] = [w.c[0] + Math.cos(ang) * rad, w.c[1] + Math.sin(ang) * rad];
-          if (!w.g || contains(w.g, cand)) {
-            pt = cand;
-            break;
-          }
-        }
+        if (w) pt = scatter(w, r.nit, 0.0005, 0.0025);
+      } else if (!pt && r.area != null) {
+        const a = areas.get(String(r.area));
+        if (a) pt = scatter(a, r.nit, 0.001, 0.005);
       }
       if (!pt) continue;
       feats.push({ type: "Feature", properties: { nit: r.nit, g, r: size, exact: r.site ? 1 : 0 }, geometry: { type: "Point", coordinates: pt } });
     }
     (map.getSource("dots") as GeoJSONSource).setData({ type: "FeatureCollection", features: feats } as never);
     map.setLayoutProperty("dots", "visibility", showDots ? "visible" : "none");
-  }, [ready, rows, dotRows, wardGeo, showDots]);
+  }, [layersReady, rows, dotRows, wardGeo, areaGeo, showDots]);
 
   // ---- selection highlight + fly
   const prevSel = useRef<MapSelection>(null);
   useEffect(() => {
     const map = mapRef.current;
-    if (!ready || !map || !map.getSource("areas")) return;
+    if (!layersReady || !map || !map.getSource("areas")) return;
     const fid = (s: NonNullable<MapSelection>) => (s.level === "areas" ? Number(s.id) : s.id);
     if (prevSel.current) map.setFeatureState({ source: prevSel.current.level, id: fid(prevSel.current) }, { selected: false });
     prevSel.current = selection;
@@ -412,7 +425,7 @@ export function CityMap({
     const geo = selection.level === "areas" ? areaGeo : wardGeo;
     const f = geo?.features.find((x) => String(selection.level === "areas" ? x.properties.ac_no : x.properties.key) === selection.id);
     if (f) map.flyTo({ center: [Number(f.properties.cx), Number(f.properties.cy)], zoom: selection.level === "areas" ? 11.6 : 13.6, duration: 900 });
-  }, [ready, selection, areaGeo, wardGeo]);
+  }, [layersReady, selection, areaGeo, wardGeo]);
 
   return (
     <div className="relative h-full w-full">
@@ -441,7 +454,7 @@ export function CityMap({
           <ContractCard
             fact={byNit.get(dot.nit)!}
             supplierName={names[String(byNit.get(dot.nit)!.supplier)]}
-            where={wardLabel(byNit.get(dot.nit)!.ward)}
+            where={placeLabel(byNit.get(dot.nit)!)}
             footer={
               dot.pinned ? (
                 <div className="mt-3 flex items-center gap-2">

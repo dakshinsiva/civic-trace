@@ -7,6 +7,7 @@ import { contains, matchesPlace as matches, type Geometry } from "@/lib/places";
 import { useJson } from "@/lib/useJson";
 
 import { Icon } from "./Icon";
+import { scrollToMap } from "./map/MapLink";
 
 type Geo<P> = { features: { properties: P; geometry?: Geometry }[] };
 type WardProps = { key: string; name: string; name_kn?: string; ac_no: number; ac: string; corporation: string };
@@ -50,8 +51,7 @@ export function LocalitySearch() {
     router.push(`/?${params.toString()}`, { scroll: false });
     setQ("");
     setLocNote(null);
-    // Bring the map and the place's profile fully into view, below the sticky filters.
-    document.getElementById("map")?.scrollIntoView({ behavior: "smooth", block: "end" });
+    scrollToMap();
   };
 
   // The position is used only in this browser, to find the ward; it is never sent anywhere.

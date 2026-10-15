@@ -32,7 +32,7 @@ export function ContractCard({
 }: {
   fact: Fact;
   supplierName?: string;
-  /** The ward the contract is in, for contracts without a named place ("J.P Nagar ward"). */
+  /** The ward or area the contract is in, for contracts without a named place ("J.P Nagar ward", "Bommanahalli area"). */
   where?: string;
   footer?: React.ReactNode;
 }) {
