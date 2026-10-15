@@ -77,7 +77,7 @@ export default function MethodologyPage() {
           </p>
           <p className="text-sm text-ink">{r.summary}</p>
           <p className="text-sm text-ink-2 mt-2">{r.method}</p>
-          <h3 className="text-xs font-semibold text-ink-2 mt-3 mb-1 uppercase tracking-wide">Thresholds</h3>
+          <h3 className="text-label-l text-accent mt-4 mb-1">Thresholds</h3>
           <ul className="text-sm tabular">
             {Object.entries(r)
               .filter(([k]) => !SKIP.has(k))
@@ -89,7 +89,7 @@ export default function MethodologyPage() {
           </ul>
           <div className="grid gap-4 sm:grid-cols-2 mt-3">
             <div>
-              <h3 className="text-xs font-semibold text-ink-2 mb-1 uppercase tracking-wide">Plausible non-fraud explanations</h3>
+              <h3 className="text-label-l text-accent mb-1">Plausible non-fraud explanations</h3>
               <ul className="list-disc pl-5 text-sm space-y-0.5">
                 {r.non_fraud_explanations.map((e) => (
                   <li key={e}>{e}</li>
@@ -97,7 +97,7 @@ export default function MethodologyPage() {
               </ul>
             </div>
             <div>
-              <h3 className="text-xs font-semibold text-ink-2 mb-1 uppercase tracking-wide">Known limitations</h3>
+              <h3 className="text-label-l text-accent mb-1">Known limitations</h3>
               <ul className="list-disc pl-5 text-sm space-y-0.5">
                 {r.limitations.map((e) => (
                   <li key={e}>{e}</li>

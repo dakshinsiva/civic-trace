@@ -112,7 +112,7 @@ export function Histogram({ counts, edges, log = false, marker, markerLabel, ref
         </svg>
         {hover !== null && (
           <div
-            className="pointer-events-none absolute top-0 rounded-md border border-line bg-surface px-2 py-1 text-xs shadow-sm tabular"
+            className="tooltip pointer-events-none absolute top-0 z-10 tabular"
             style={{ left: `${(x((edges[hover] + edges[hover + 1]) / 2) / W) * 100}%`, transform: "translateX(-50%)" }}
           >
             {fx(edges[hover])} – {fx(edges[hover + 1])}: <strong>{counts[hover].toLocaleString("en-IN")}</strong>

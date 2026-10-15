@@ -103,26 +103,28 @@ export function TenderView() {
       <Section title="Who competed on price">
         {t.bidders.length ? (
           <>
-            <table className="data">
-              <thead>
-                <tr>
-                  <th>Company (as named by the portal)</th>
-                  <th className="num">Price offered</th>
-                  <th className="num">Compared with the estimate</th>
-                  <th>Rank (L1 = lowest)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {t.bidders.map((b) => (
-                  <tr key={b.position}>
-                    <td>{b.raw_name}</td>
-                    <td className="num">{inr(b.total_bid, { compact: false })}</td>
-                    <td className="num">{b.total_bid && t.ecv ? `${((b.total_bid / t.ecv - 1) * 100).toFixed(2)}%` : "—"}</td>
-                    <td className="tabular">{b.rank ?? "—"}</td>
+            <div className="overflow-x-auto">
+              <table className="data">
+                <thead>
+                  <tr>
+                    <th>Company (as named by the portal)</th>
+                    <th className="num">Price offered</th>
+                    <th className="num">Compared with the estimate</th>
+                    <th>Rank (L1 = lowest)</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {t.bidders.map((b) => (
+                    <tr key={b.position}>
+                      <td>{b.raw_name}</td>
+                      <td className="num">{inr(b.total_bid, { compact: false })}</td>
+                      <td className="num">{b.total_bid && t.ecv ? `${((b.total_bid / t.ecv - 1) * 100).toFixed(2)}%` : "—"}</td>
+                      <td className="tabular">{b.rank ?? "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
             <p className="text-xs text-muted mt-2">
               From the government&apos;s published comparison of prices. Companies rejected earlier, at the document and
               qualification check, are not listed. Names are shown exactly as published.
@@ -139,30 +141,32 @@ export function TenderView() {
             When a tender gets no acceptable bids, the same work is advertised again as a new &ldquo;call&rdquo; (a{" "}
             <Term k="retender">re-tender</Term>). All calls for {t.process_key}:
           </p>
-          <table className="data">
-            <thead>
-              <tr>
-                <th>Call</th>
-                <th>Published</th>
-                <th>Deadline</th>
-                <th>Outcome</th>
-                <th className="num">Companies competing</th>
-              </tr>
-            </thead>
-            <tbody>
-              {t.calls_in_process.map((c) => (
-                <tr key={c.nit_id}>
-                  <td className="tabular">
-                    {c.nit_id === t.nit_id ? <strong>Call {c.call_no} (this)</strong> : <Link href={`/tender/?id=${c.nit_id}`}>Call {c.call_no}</Link>}
-                  </td>
-                  <td>{date(c.published_at)}</td>
-                  <td>{date(c.close_at_final)}</td>
-                  <td>{statusLabel(c.status)}</td>
-                  <td className="num">{c.n_price_stage_bidders ?? "—"}</td>
+          <div className="overflow-x-auto">
+            <table className="data">
+              <thead>
+                <tr>
+                  <th>Call</th>
+                  <th>Published</th>
+                  <th>Deadline</th>
+                  <th>Outcome</th>
+                  <th className="num">Companies competing</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {t.calls_in_process.map((c) => (
+                  <tr key={c.nit_id}>
+                    <td className="tabular">
+                      {c.nit_id === t.nit_id ? <strong>Call {c.call_no} (this)</strong> : <Link href={`/tender/?id=${c.nit_id}`}>Call {c.call_no}</Link>}
+                    </td>
+                    <td>{date(c.published_at)}</td>
+                    <td>{date(c.close_at_final)}</td>
+                    <td>{statusLabel(c.status)}</td>
+                    <td className="num">{c.n_price_stage_bidders ?? "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </Section>
       )}
 
@@ -216,7 +220,7 @@ function Fact({ label, value, sub }: { label: React.ReactNode; value: React.Reac
   return (
     <div className="card px-4 py-3">
       <div className="text-xs text-muted">{label}</div>
-      <div className="text-lg font-semibold tabular">{value}</div>
+      <div className="text-title-l tabular">{value}</div>
       {sub && <div className="text-xs text-muted">{sub}</div>}
     </div>
   );

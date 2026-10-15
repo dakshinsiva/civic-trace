@@ -5,10 +5,13 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo } from "react";
 
 import { Histogram } from "@/components/charts/Histogram";
+import { Icon } from "@/components/Icon";
 import { Term } from "@/components/Term";
 import { applyFilters, BIDDER_COLORS, BIDDER_LABELS, bidderGroup, decodeFacts, EMPTY_FILTERS, type Fact, type FactsFile, type Filters } from "@/lib/facts";
 import { inr } from "@/lib/format";
 import { useJson } from "@/lib/useJson";
+
+import { Loading } from "@/components/ui";
 
 import { MapExplorer } from "@/components/map/MapExplorer";
 import { METRICS, type MetricKey } from "@/lib/areaStats";
@@ -42,6 +45,17 @@ export function Explorer({ buyerNames }: { buyerNames: Record<string, string> })
     [pathname, router],
   );
 
+  // Selected ward on the map (shareable through the URL)
+  const setWard = useCallback(
+    (v: string) => {
+      const next = new URLSearchParams(window.location.search);
+      if (v) next.set("ward", v);
+      else next.delete("ward");
+      router.replace(`${pathname}?${next.toString()}`, { scroll: false });
+    },
+    [pathname, router],
+  );
+
   // Map view (shareable through the URL)
   const measure = (METRICS.find((m) => m.key === sp.get("measure"))?.key ?? "per_capita") as MetricKey;
   const level = sp.get("level") === "wards" ? "wards" : "areas";
@@ -66,7 +80,7 @@ export function Explorer({ buyerNames }: { buyerNames: Record<string, string> })
     };
   }, [all, filters.buyer]);
 
-  if (loading) return <p className="text-muted">Loading the explorer…</p>;
+  if (loading) return <Loading what="the explorer" />;
   if (error || !data) return <p className="text-muted">The explorer data is not available in this release.</p>;
 
   const sel = rows.filter((r) => r.selection != null);
@@ -80,23 +94,25 @@ export function Explorer({ buyerNames }: { buyerNames: Record<string, string> })
   return (
     <div className="space-y-6" id="explore">
       {/* Filters: sticky on wide screens; collapsible on phones */}
-      <details className="card p-4 lg:sticky lg:top-0 z-10 group" open>
-        <summary className="cursor-pointer text-sm font-medium text-ink lg:hidden mb-2">
+      <details className="card p-4 lg:sticky lg:top-[57px] z-10 group" open>
+        <summary className="text-title-s text-ink lg:hidden mb-3">
+          <Icon name="sliders-horizontal" size={20} />
           Filters{anyFilter ? ` (${FILTER_KEYS.filter((k) => filters[k]).length} active)` : ""}
         </summary>
-        <div className="flex flex-wrap items-end gap-3 text-sm" role="group" aria-label="Filters">
+        <div className="flex flex-wrap items-end gap-3" role="group" aria-label="Filters">
           <F label="Who issued the tender" value={filters.buyer} onChange={(v) => set("buyer", v)} options={opts.buyer.map((b) => [b, `${b} · ${buyerNames[b] ?? b}`])} />
           <F label="Local office (division)" value={filters.division} onChange={(v) => set("division", v)} options={opts.division.map((d) => [d, d])} />
           <F label={<><Term k="fiscal_year">Financial year</Term> published</>} value={filters.fy} onChange={(v) => set("fy", v)} options={opts.fy.map((f) => [f, f])} />
           <F label="Type of work" value={filters.category} onChange={(v) => set("category", v)} options={opts.category.map((c) => [c, c])} />
           <F label={<>Open or <Term k="reserved">reserved</Term></>} value={filters.tenderType} onChange={(v) => set("tenderType", v)} options={[["OPEN", "Open to all"], ["RESERVED", "Reserved"]]} />
           {anyFilter && (
-            <button type="button" className="text-accent underline pb-1.5" onClick={() => router.replace(`${pathname}`, { scroll: false })}>
+            <button type="button" className="btn-secondary" onClick={() => router.replace(`${pathname}`, { scroll: false })}>
+              <Icon name="x" size={18} />
               Clear filters
             </button>
           )}
         </div>
-        <p className="mt-2 text-xs text-muted">
+        <p className="mt-3 text-body-s text-muted">
           Showing {rows.length.toLocaleString("en-IN")} tenders. The link in your address bar captures these filters, so you
           can share exactly this view.
         </p>
@@ -111,18 +127,21 @@ export function Explorer({ buyerNames }: { buyerNames: Record<string, string> })
         setFy={(v) => set("fy", v)}
         area={filters.area}
         setArea={(v) => set("area", v)}
+        ward={sp.get("ward") ?? ""}
+        setWard={setWard}
         measure={measure}
         level={level}
         setView={setView}
         focusKey={`${filters.buyer}|${filters.division}`}
       />
       {filters.area && (
-        <p className="rounded-md border border-[var(--accent)] bg-[var(--series-1-wash)] px-3 py-2 text-sm text-ink">
-          Showing one area from the map. Every chart below is limited to it.{" "}
-          <button type="button" className="text-accent underline" onClick={() => set("area", "")}>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md bg-accent-soft px-4 py-2 text-body-m text-ink">
+          <Icon name="map" size={20} />
+          <span className="flex-1">Showing one area from the map. Every chart below is limited to it.</span>
+          <button type="button" className="btn-ghost -my-1 text-ink" onClick={() => set("area", "")}>
             Show the whole city
           </button>
-        </p>
+        </div>
       )}
 
       {/* KPIs in plain words */}
@@ -216,14 +235,14 @@ export function Explorer({ buyerNames }: { buyerNames: Record<string, string> })
 
 function Card({ q, what, how, why, takeaway, children }: { q: string; what: React.ReactNode; how?: string; why: string; takeaway?: string; children: React.ReactNode }) {
   return (
-    <section className="card p-5">
-      <h3 className="text-lg font-semibold text-ink">{q}</h3>
-      <p className="text-sm text-ink-2 mt-1">{what}</p>
-      {takeaway && <p className="mt-3 rounded-md bg-surface-2 px-3 py-2 text-sm text-ink">{takeaway}</p>}
+    <section className="card p-5 sm:p-6">
+      <h3 className="text-title-l text-ink">{q}</h3>
+      <p className="text-body-m text-ink-2 mt-1">{what}</p>
+      {takeaway && <p className="callout mt-4 bg-accent-soft text-ink">{takeaway}</p>}
       <div className="mt-4">{children}</div>
-      <details className="mt-3 text-sm">
-        <summary className="cursor-pointer text-ink-2">How to read this, and why it matters</summary>
-        <div className="mt-2 space-y-1 text-ink-2">
+      <details className="mt-4 text-body-m">
+        <summary className="text-label-l text-accent">How to read this, and why it matters</summary>
+        <div className="mt-2 space-y-1 pl-6 text-ink-2">
           {how && <p><strong className="text-ink">How to read it:</strong> {how}</p>}
           <p><strong className="text-ink">Why it matters:</strong> {why}</p>
           <p className="text-muted">A pattern here is a reason to look closer, not proof of wrongdoing.</p>
@@ -235,19 +254,19 @@ function Card({ q, what, how, why, takeaway, children }: { q: string; what: Reac
 
 function Kpi({ label, value, sub, tone }: { label: React.ReactNode; value: React.ReactNode; sub?: string; tone?: "warn" }) {
   return (
-    <div className="card px-4 py-3">
-      <div className="text-xs text-muted">{label}</div>
-      <div className={`text-2xl font-semibold mt-0.5 ${tone === "warn" ? "text-[var(--series-2)]" : "text-ink"}`}>{value}</div>
-      {sub && <div className="text-xs text-muted mt-0.5">{sub}</div>}
+    <div className={`rounded-lg px-4 py-4 ${tone === "warn" ? "border border-notice-border bg-notice-bg text-notice-ink" : "card"}`}>
+      <div className={`label-mono ${tone === "warn" ? "" : "text-muted"}`}>{label}</div>
+      <div className={`mt-2 font-mono text-headline-s font-medium tracking-tight tabular ${tone === "warn" ? "" : "text-ink"}`}>{value}</div>
+      {sub && <div className={`text-body-s mt-1 ${tone === "warn" ? "" : "text-muted"}`}>{sub}</div>}
     </div>
   );
 }
 
 function F({ label, value, onChange, options }: { label: React.ReactNode; value: string; onChange: (v: string) => void; options: [string, string][] }) {
   return (
-    <label className="flex flex-col gap-1">
-      <span className="text-xs text-muted">{label}</span>
-      <select value={value} onChange={(e) => onChange(e.target.value)} className="rounded-md border border-line bg-surface px-2 py-1.5 w-full sm:w-auto max-w-[15rem]">
+    <label className="flex w-full flex-col gap-1 sm:w-auto">
+      <span className="field-label">{label}</span>
+      <select value={value} onChange={(e) => onChange(e.target.value)} className="field w-full sm:w-auto sm:max-w-[15rem]">
         <option value="">All</option>
         {options.map(([v, l]) => (
           <option key={v} value={v}>

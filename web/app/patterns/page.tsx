@@ -83,13 +83,13 @@ export default function PatternsPage() {
         {SCHEMES.map((s) => (
           <Section key={s.name} title={s.name}>
             <p className="text-sm text-ink">{s.how}</p>
-            <h3 className="text-xs font-semibold text-ink-2 mt-3 mb-1 uppercase tracking-wide">What can surface it</h3>
+            <h3 className="text-label-l text-accent mt-4 mb-1">What can surface it</h3>
             <ul className="text-sm space-y-0.5">
               {s.signals.map((sig) => (
                 <li key={sig.label}>{sig.rule ? <Link href={`/methodology/#${sig.rule}`}>{sig.label}</Link> : sig.label}</li>
               ))}
             </ul>
-            <h3 className="text-xs font-semibold text-ink-2 mt-3 mb-1 uppercase tracking-wide">Blind spots</h3>
+            <h3 className="text-label-l text-accent mt-4 mb-1">Blind spots</h3>
             <p className="text-sm text-ink-2">{s.cannotSee}</p>
           </Section>
         ))}

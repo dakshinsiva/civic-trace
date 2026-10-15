@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
 import { Histogram } from "@/components/charts/Histogram";
+import { Icon } from "@/components/Icon";
 import { ErrorNote, KV, Loading, PageTitle, RuleBadge, Section } from "@/components/ui";
 import { date, num, pct } from "@/lib/format";
 import type { Flag, RuleConfig } from "@/lib/types";
@@ -31,20 +32,23 @@ export function FlagView({ rules }: { rules: Record<string, RuleConfig> }) {
         </p>
       </PageTitle>
 
-      <div className="flex flex-wrap gap-2 text-sm">
+      <div className="flex flex-wrap gap-2">
         {ctx.nit_id != null && (
-          <Link href={`/tender/?id=${ctx.nit_id}`} className="rounded-md border border-line bg-surface px-3 py-1.5">
-            Open the tender record →
+          <Link href={`/tender/?id=${ctx.nit_id}`} className="btn-secondary">
+            <Icon name="scroll-text" size={18} />
+            Open the tender record
           </Link>
         )}
         {supplierId != null && (
-          <Link href={`/supplier/?id=${supplierId}`} className="rounded-md border border-line bg-surface px-3 py-1.5">
-            Supplier&apos;s selections →
+          <Link href={`/supplier/?id=${supplierId}`} className="btn-outline">
+            <Icon name="users" size={18} />
+            Supplier&apos;s selections
           </Link>
         )}
         {buyerCode && (
-          <Link href={`/buyers/${buyerCode}/`} className="rounded-md border border-line bg-surface px-3 py-1.5">
-            Buyer profile ({buyerCode}) →
+          <Link href={`/buyers/${buyerCode}/`} className="btn-outline">
+            <Icon name="landmark" size={18} />
+            Buyer profile ({buyerCode})
           </Link>
         )}
       </div>

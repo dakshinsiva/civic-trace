@@ -1,3 +1,8 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="web/public/logo-dark.svg">
+  <img src="web/public/logo.svg" alt="CivicTrace" height="44">
+</picture>
+
 # CivicTrace — Bengaluru
 
 An open-source project that makes Bengaluru's public works tenders easy to follow: how each contract is tendered, who

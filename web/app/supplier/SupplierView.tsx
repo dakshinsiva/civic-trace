@@ -39,28 +39,30 @@ export function SupplierView({ relationships }: { relationships: boolean }) {
       {relationships && <Connections supplierId={s.supplier_id} />}
 
       <Section title="By buyer and fiscal year">
-        <table className="data">
-          <thead>
-            <tr>
-              <th>Buyer</th>
-              <th>Fiscal year</th>
-              <th className="num">Selections</th>
-              <th className="num">Selected bid value</th>
-            </tr>
-          </thead>
-          <tbody>
-            {s.by_buyer_fy.map((r) => (
-              <tr key={`${r.buyer_code}-${r.fy_decision}`}>
-                <td>
-                  <Link href={`/buyers/${r.buyer_code}/`}>{r.buyer_code}</Link>
-                </td>
-                <td>{r.fy_decision}</td>
-                <td className="num">{r.selections}</td>
-                <td className="num">{inr(r.bid_value)}</td>
+        <div className="overflow-x-auto">
+          <table className="data">
+            <thead>
+              <tr>
+                <th>Buyer</th>
+                <th>Fiscal year</th>
+                <th className="num">Selections</th>
+                <th className="num">Selected bid value</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {s.by_buyer_fy.map((r) => (
+                <tr key={`${r.buyer_code}-${r.fy_decision}`}>
+                  <td>
+                    <Link href={`/buyers/${r.buyer_code}/`}>{r.buyer_code}</Link>
+                  </td>
+                  <td>{r.fy_decision}</td>
+                  <td className="num">{r.selections}</td>
+                  <td className="num">{inr(r.bid_value)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </Section>
 
       <Section title={`Tenders (${s.tenders.length})`}>

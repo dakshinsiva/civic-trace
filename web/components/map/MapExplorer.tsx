@@ -8,6 +8,7 @@ import type { Fact } from "@/lib/facts";
 import { BIDDER_COLORS } from "@/lib/facts";
 import { inr } from "@/lib/format";
 
+import { Icon } from "../Icon";
 import { CityMap, type Level, type MapSelection } from "./CityMap";
 
 type Geo = { features: { properties: Record<string, unknown> }[] } | null;
@@ -31,6 +32,8 @@ export function MapExplorer({
   setFy,
   area,
   setArea,
+  ward,
+  setWard,
   measure,
   level,
   setView,
@@ -43,6 +46,9 @@ export function MapExplorer({
   setFy: (v: string) => void;
   area: string;
   setArea: (v: string) => void;
+  /** Selected ward key, kept in the URL so a ward can be shared as a link. */
+  ward: string;
+  setWard: (v: string) => void;
   measure: MetricKey;
   level: Level;
   setView: (v: { measure?: MetricKey; level?: Level }) => void;
@@ -50,7 +56,8 @@ export function MapExplorer({
   focusKey?: string;
 }) {
   const [showDots, setShowDots] = useState(false);
-  const [wardSel, setWardSel] = useState<string | null>(null);
+  const wardSel = ward || null;
+  const setWardSel = (v: string | null) => setWard(v ?? "");
   const [stats, setStats] = useState<Stats | null>(null);
   const [playing, setPlaying] = useState(false);
   const [query, setQuery] = useState("");
@@ -68,9 +75,9 @@ export function MapExplorer({
       if (!s) return;
       setHintDismissed(true);
       if (s.level === "areas") setArea(s.id === area ? "" : s.id);
-      else setWardSel(s.id === wardSel ? null : s.id);
+      else setWard(s.id === wardSel ? "" : s.id);
     },
-    [area, setArea, wardSel],
+    [area, setArea, wardSel, setWard],
   );
   const onStats = useCallback((s: Stats) => setStats(s), []);
 
@@ -169,13 +176,13 @@ export function MapExplorer({
   return (
     <div ref={shellRef} className={`card overflow-hidden ${isFull ? "flex flex-col bg-[var(--page)]" : ""}`}>
       {/* Quick views */}
-      <div className="border-b border-line p-4">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h3 className="text-xl font-semibold text-ink">{activeQuick?.question ?? metric.question}</h3>
+      <div className="border-b border-line p-4 sm:p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="text-title-l text-ink">{activeQuick?.question ?? metric.question}</h3>
           <select
             value={measure}
             onChange={(e) => setView({ measure: e.target.value as MetricKey })}
-            className="rounded-md border border-line bg-surface px-2 py-1 text-sm text-ink-2"
+            className="field h-9 w-full max-w-full text-body-m sm:w-auto"
             aria-label="Choose what the map shows"
           >
             {METRICS.map((m) => (
@@ -185,8 +192,8 @@ export function MapExplorer({
             ))}
           </select>
         </div>
-        <p className="mt-1 text-sm text-ink-2">{metric.explain}</p>
-        <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]" role="radiogroup" aria-label="Quick views">
+        <p className="mt-1 text-body-m text-ink-2">{metric.explain}</p>
+        <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]" role="radiogroup" aria-label="Quick views">
           {QUICK_VIEWS.map((v) => {
             const on = activeQuick?.id === v.id;
             return (
@@ -200,8 +207,9 @@ export function MapExplorer({
                   setShowDots(!!v.dots);
                   setFootprintOf(null);
                 }}
-                className={`shrink-0 rounded-full border px-3 py-1.5 text-sm transition-colors ${on ? "border-[var(--accent)] bg-[var(--series-1-wash)] font-medium text-ink" : "border-line text-ink-2 hover:bg-surface-2"}`}
+                className="chip"
               >
+                {on && <Icon name="check" size={18} />}
                 {v.question}
               </button>
             );
@@ -209,7 +217,7 @@ export function MapExplorer({
         </div>
       </div>
 
-      <div className={`grid lg:grid-cols-[1fr_23rem] ${isFull ? "min-h-0 flex-1" : ""}`}>
+      <div id="map" className={`grid lg:grid-cols-[1fr_23rem] ${isFull ? "min-h-0 flex-1" : ""}`}>
         <div className={`relative ${isFull ? "h-full min-h-[60vh]" : "h-[68vh] max-h-[680px] min-h-[440px]"}`}>
           <CityMap
             rows={rows}
@@ -227,31 +235,34 @@ export function MapExplorer({
 
           {/* Top-left: detail level, layers, search */}
           <div className="absolute left-3 top-3 z-10 flex max-w-[calc(100%-1.5rem)] flex-wrap items-start gap-2 sm:max-w-[calc(100%-17rem)]">
-            <div className="flex overflow-hidden rounded-md border border-line bg-surface/95 text-sm shadow-sm" role="radiogroup" aria-label="Map detail">
+            <div className="segmented on-map h-9" role="radiogroup" aria-label="Map detail">
               {(["areas", "wards"] as const).map((l) => (
-                <button key={l} type="button" role="radio" aria-checked={level === l} onClick={() => setView({ level: l })} className={`px-3 py-1.5 ${level === l ? "bg-surface-2 font-medium text-ink" : "text-ink-2"}`}>
+                <button key={l} type="button" role="radio" aria-checked={level === l} onClick={() => setView({ level: l })}>
+                  {level === l && <Icon name="check" size={18} />}
                   {l === "areas" ? "Areas" : "Wards"}
                 </button>
               ))}
             </div>
-            <button type="button" aria-pressed={showDots} onClick={() => setShowDots((d) => !d)} className={`rounded-md border px-3 py-1.5 text-sm shadow-sm ${showDots ? "border-[var(--accent)] bg-surface text-ink" : "border-line bg-surface/95 text-ink-2"}`}>
-              {showDots ? "✓ " : ""}Contracts
+            <button type="button" aria-pressed={showDots} onClick={() => setShowDots((d) => !d)} className="chip on-map h-9">
+              <Icon name={showDots ? "check" : "chart-scatter"} size={18} />
+              Contracts
             </button>
             <div className="relative">
+              <Icon name="search" size={20} className="pointer-events-none absolute left-2.5 top-2 z-10 text-ink-2" />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Find a place…"
-                className="w-40 rounded-md border border-line bg-surface/95 px-2.5 py-1.5 text-sm shadow-sm sm:w-48"
+                className="field on-map h-9 w-44 rounded-full pl-9 text-body-m sm:w-52"
                 aria-label="Find a place"
               />
               {searchHits.length > 0 && (
-                <ul className="absolute left-0 z-20 mt-1 w-64 overflow-hidden rounded-md border border-line bg-surface text-sm shadow-lg">
+                <ul className="absolute left-0 z-20 mt-1 w-64 overflow-hidden rounded-xs bg-surface-2 py-2 text-body-m shadow-[var(--shadow-pop)]">
                   {searchHits.map((h) => (
                     <li key={`${h.kind}-${h.id}`}>
                       <button
                         type="button"
-                        className="block w-full px-3 py-1.5 text-left hover:bg-surface-2"
+                        className="state block w-full px-3 py-2 text-left"
                         onClick={() => {
                           if (h.kind === "ward") {
                             setView({ level: "wards" });
@@ -264,7 +275,7 @@ export function MapExplorer({
                           setHintDismissed(true);
                         }}
                       >
-                        {h.name} <span className="text-xs text-muted">· {h.sub}</span>
+                        {h.name} <span className="text-body-s text-muted">· {h.sub}</span>
                       </button>
                     </li>
                   ))}
@@ -276,18 +287,20 @@ export function MapExplorer({
           {/* Top-right: view controls */}
           <div className="absolute right-3 top-3 z-10 hidden flex-col items-end gap-2 sm:flex">
             <div className="flex gap-1.5">
-              <button type="button" onClick={() => setResetCmd((n) => n + 1)} className="rounded-md border border-line bg-surface/95 px-2.5 py-1.5 text-sm text-ink-2 shadow-sm" title="Show the whole city">
-                ⟲ Whole city
+              <button type="button" onClick={() => setResetCmd((n) => n + 1)} className="chip on-map h-9" title="Show the whole city">
+                <Icon name="locate-fixed" size={18} />
+                Whole city
               </button>
-              <button type="button" onClick={toggleFull} className="rounded-md border border-line bg-surface/95 px-2.5 py-1.5 text-sm text-ink-2 shadow-sm" aria-pressed={isFull}>
-                {isFull ? "Exit full screen" : "⤢ Full screen"}
+              <button type="button" onClick={toggleFull} className="chip on-map h-9">
+                <Icon name={isFull ? "minimize" : "maximize"} size={18} />
+                {isFull ? "Exit full screen" : "Full screen"}
               </button>
             </div>
           </div>
 
           {/* First-visit hint */}
           {!hintDismissed && !selection && (
-            <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 hidden -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--ink)] px-4 py-2 text-sm text-[var(--page)] opacity-85 shadow-lg sm:block">
+            <div className="tooltip-plain pointer-events-none absolute left-1/2 top-1/2 z-10 hidden -translate-x-1/2 -translate-y-1/2 rounded-sm px-4 py-2 text-body-m shadow-[var(--shadow-pop)] sm:block">
               Hover over an area for a summary · click it for the full story
             </div>
           )}
@@ -300,11 +313,12 @@ export function MapExplorer({
                 if (!playing && fy === fys[fys.length - 1]) setFy("");
                 setPlaying((p) => !p);
               }}
-              className="shrink-0 rounded-md border border-line bg-surface/95 px-2.5 py-1.5 text-sm text-ink shadow-sm"
+              className="chip on-map h-9 text-ink"
               aria-pressed={playing}
               aria-label={playing ? "Pause" : "Play through the years"}
             >
-              {playing ? "❚❚ Pause" : "▶ Play years"}
+              <Icon name={playing ? "pause" : "play"} size={18} />
+              {playing ? "Pause" : "Play years"}
             </button>
             {["", ...fys].map((y) => (
               <button
@@ -314,7 +328,9 @@ export function MapExplorer({
                   setPlaying(false);
                   setFy(y);
                 }}
-                className={`shrink-0 rounded-md border px-2.5 py-1.5 text-sm shadow-sm tabular ${fy === y ? "border-[var(--accent)] bg-surface font-medium text-ink" : "border-line bg-surface/90 text-ink-2"}`}
+                role="radio"
+                aria-checked={fy === y}
+                className="chip on-map h-9 tabular"
               >
                 {y ? `FY ${y}` : "All years"}
               </button>
@@ -324,7 +340,7 @@ export function MapExplorer({
 
 
         {/* Side panel */}
-        <aside className={`overflow-y-auto border-t border-line p-4 lg:border-l lg:border-t-0 ${isFull ? "lg:h-full" : "lg:h-[min(68vh,680px)] lg:min-h-[440px]"}`}>
+        <aside className={`overflow-y-auto border-t border-line p-4 sm:p-5 lg:border-l lg:border-t-0 ${isFull ? "lg:h-full" : "lg:h-[min(68vh,680px)] lg:min-h-[440px]"}`}>
           {sel && sel.props ? (
             <Profile
               kind={sel.kind}
@@ -342,36 +358,36 @@ export function MapExplorer({
             />
           ) : (
             <>
-              <div className="text-xs uppercase tracking-wide text-muted">
+              <div className="label-mono text-accent">
                 {fy ? `FY ${fy}` : "All years"} · {level === "areas" ? "28 areas" : "369 wards"}
               </div>
-              <h3 className="mt-1 font-semibold text-ink">Highest on this measure</h3>
-              <ol className="mt-2 space-y-1">
+              <h3 className="mt-1 text-title-m text-ink">Highest on this measure</h3>
+              <ol className="mt-2 -mx-2 space-y-0.5">
                 {ranking.map((h, i) => {
                   const maxV = ranking[0]?.value || 1;
                   return (
                     <li key={h.id}>
-                      <button type="button" onClick={() => (level === "areas" ? setArea(h.id) : setWardSel(h.id))} className="w-full rounded-md px-2 py-1.5 text-left hover:bg-surface-2">
-                        <div className="flex justify-between gap-2 text-sm">
+                      <button type="button" onClick={() => (level === "areas" ? setArea(h.id) : setWardSel(h.id))} className="state w-full rounded-sm px-2 py-2 text-left">
+                        <div className="flex justify-between gap-2 text-body-m">
                           <span className="truncate text-ink">
                             <span className="mr-1.5 text-muted tabular">{i + 1}</span>
                             {h.name}
                           </span>
                           <span className="font-medium tabular">{formatMetric(h.value, metric)}</span>
                         </div>
-                        <div className="mt-1 h-1 rounded-full bg-[var(--grid)]">
+                        <div className="mt-1.5 h-1 rounded-full bg-surface-2">
                           <div className="h-1 rounded-full" style={{ width: `${(h.value / maxV) * 100}%`, background: RAMPS[metric.kind][3] }} />
                         </div>
-                        <div className="mt-0.5 text-xs text-muted">{h.n.toLocaleString("en-IN")} records</div>
+                        <div className="mt-1 text-body-s text-muted">{h.n.toLocaleString("en-IN")} records</div>
                       </button>
                     </li>
                   );
                 })}
-                {!ranking.length && <li className="text-sm text-muted">Not enough contracts placed on the map yet for this measure.</li>}
+                {!ranking.length && <li className="px-2 text-body-m text-muted">Not enough contracts placed on the map yet for this measure.</li>}
               </ol>
-              <details className="mt-5 rounded-md bg-surface-2 p-3 text-xs text-ink-2">
-                <summary className="cursor-pointer font-medium text-ink">How to read this map</summary>
-                <ul className="mt-2 list-disc space-y-1 pl-4">
+              <details className="mt-5 rounded-md bg-surface-2 p-3 text-body-s text-ink-2">
+                <summary className="text-label-l text-ink">How to read this map</summary>
+                <ul className="mt-2 list-disc space-y-1 pl-10">
                   <li>Point at any area for a one-line summary. The list on the right ranks places on the chosen question.</li>
                   <li>Click an area to see its full story. All the charts below then show only that area.</li>
                   <li>Inside an area&apos;s story, point at a contractor to light up (in orange) everywhere it won.</li>
@@ -418,18 +434,18 @@ function Profile({
     <div>
       <div className="flex items-start justify-between gap-2">
         <div>
-          <div className="text-xs uppercase tracking-wide text-muted">{kind === "Area" ? "Area" : `Ward in ${String(props.ac)}`}</div>
-          <h3 className="text-xl font-semibold text-ink">{String(props.name)}</h3>
-          <div className="text-xs text-muted">
+          <div className="label-mono text-accent">{kind === "Area" ? "Area" : `Ward in ${String(props.ac)}`}</div>
+          <h3 className="text-title-l text-ink">{String(props.name)}</h3>
+          <div className="text-body-s text-muted">
             {kind === "Area" ? `${(props.corporations as string[] | undefined)?.join(", ")} corporation` : `${String(props.corporation)} corporation`}
             {pop ? ` · ${pop.toLocaleString("en-IN")} residents (2011)` : ""}
           </div>
         </div>
-        <button type="button" onClick={onClose} className="rounded-md border border-line px-2 py-1 text-sm text-ink-2 hover:bg-surface-2">
-          ✕ Close
+        <button type="button" onClick={onClose} className="icon-btn -mr-2 -mt-1" aria-label="Close" title="Close">
+          <Icon name="x" size={24} />
         </button>
       </div>
-      <p className="mt-3 rounded-md bg-surface-2 px-3 py-2 text-sm text-ink">{describe(metric, v.value, v.n)}</p>
+      <p className="callout mt-3 bg-accent-soft text-ink">{describe(metric, v.value, v.n)}</p>
       {!stat ? (
         <p className="mt-3 text-sm text-muted">No contracts placed here in the current selection.</p>
       ) : (
@@ -483,7 +499,7 @@ function Profile({
                   key={s.id}
                   onMouseEnter={() => setFootprintOf(s.id)}
                   onMouseLeave={() => setFootprintOf(null)}
-                  className={`flex items-center justify-between gap-2 rounded px-1.5 py-1 ${footprintOf === s.id ? "bg-surface-2" : ""}`}
+                  className={`flex items-center justify-between gap-2 rounded-xs px-1.5 py-1 ${footprintOf === s.id ? "bg-accent-soft" : ""}`}
                 >
                   <Link href={`/supplier/?id=${s.id}`} className="truncate" onFocus={() => setFootprintOf(s.id)} onBlur={() => setFootprintOf(null)}>
                     {names[String(s.id)] ?? `Supplier ${s.id}`}
@@ -506,10 +522,10 @@ function Profile({
 
 function Mini({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="rounded-md bg-surface-2 px-3 py-2">
-      <div className="text-xs text-muted">{label}</div>
-      <div className="font-semibold text-ink tabular">{value}</div>
-      {sub && <div className="text-xs text-muted">{sub}</div>}
+    <div className="rounded-sm bg-surface-2 px-3 py-2">
+      <div className="label-mono text-muted">{label}</div>
+      <div className="text-title-m text-ink tabular">{value}</div>
+      {sub && <div className="text-body-s text-muted">{sub}</div>}
     </div>
   );
 }

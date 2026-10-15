@@ -61,18 +61,18 @@ export function FlagsExplorer({ rules, buyers }: { rules: Overview["rules"]; buy
   const shown = rows.slice(page * PAGE, page * PAGE + PAGE);
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-2 items-end text-sm" role="group" aria-label="Filters">
+      <div className="card flex flex-wrap gap-3 items-end p-4" role="group" aria-label="Filters">
         <Select label="Warning sign" value={rule} onChange={(v) => set("rule", v)} options={rules.filter((r) => r.enabled).map((r) => [r.rule_id, r.plain_name])} />
         <Select label="Department" value={buyer} onChange={(v) => set("buyer", v)} options={buyers.map((b) => [b, b])} />
         <Select label="Fiscal year" value={fy} onChange={(v) => set("fy", v)} options={options.fys.map((f) => [f, f])} />
         <Select label="Type of work" value={cat} onChange={(v) => set("cat", v)} options={options.cats.map((c) => [c, c])} />
-        <label className="flex flex-col gap-1">
-          <span className="text-xs text-muted">Search</span>
+        <label className="flex w-full flex-col gap-1 sm:w-auto">
+          <span className="field-label">Search</span>
           <input
             defaultValue={q}
             onChange={(e) => set("q", e.target.value)}
             placeholder="tender no., supplier, division"
-            className="rounded-md border border-line bg-surface px-2 py-1.5 w-56"
+            className="field w-full sm:w-56"
           />
         </label>
       </div>
@@ -113,7 +113,7 @@ export function FlagsExplorer({ rules, buyers }: { rules: Overview["rules"]; buy
       </div>
       {rows.length > PAGE && (
         <div className="flex gap-3 text-sm items-center">
-          <button disabled={page === 0} onClick={() => set("page", String(page - 1))} className="rounded-md border border-line px-3 py-1 disabled:opacity-40">
+          <button disabled={page === 0} onClick={() => set("page", String(page - 1))} className="btn-outline disabled:pointer-events-none disabled:opacity-40">
             Previous
           </button>
           <span className="tabular text-muted">
@@ -122,7 +122,7 @@ export function FlagsExplorer({ rules, buyers }: { rules: Overview["rules"]; buy
           <button
             disabled={(page + 1) * PAGE >= rows.length}
             onClick={() => set("page", String(page + 1))}
-            className="rounded-md border border-line px-3 py-1 disabled:opacity-40"
+            className="btn-outline disabled:pointer-events-none disabled:opacity-40"
           >
             Next
           </button>
@@ -134,9 +134,9 @@ export function FlagsExplorer({ rules, buyers }: { rules: Overview["rules"]; buy
 
 export function Select({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: [string, string][] }) {
   return (
-    <label className="flex flex-col gap-1">
-      <span className="text-xs text-muted">{label}</span>
-      <select value={value} onChange={(e) => onChange(e.target.value)} className="rounded-md border border-line bg-surface px-2 py-1.5 max-w-[16rem]">
+    <label className="flex w-full flex-col gap-1 sm:w-auto">
+      <span className="field-label">{label}</span>
+      <select value={value} onChange={(e) => onChange(e.target.value)} className="field w-full sm:w-auto sm:max-w-[16rem]">
         <option value="">All</option>
         {options.map(([v, l]) => (
           <option key={v} value={v}>

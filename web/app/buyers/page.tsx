@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { Icon } from "@/components/Icon";
 import { PageTitle } from "@/components/ui";
 import { getMeta, getOverview } from "@/lib/data";
 import { num } from "@/lib/format";
@@ -20,14 +21,20 @@ export default function BuyersPage() {
       </PageTitle>
       <div className="grid gap-3 sm:grid-cols-2">
         {o.by_buyer.map((b) => (
-          <Link key={b.code} href={`/buyers/${b.code}/`} className="card p-4 no-underline hover:no-underline hover:border-[var(--accent)]">
-            <div className="font-semibold text-ink">
-              {b.code} <span className="font-normal text-ink-2">· {b.name}</span>
+          <Link key={b.code} href={`/buyers/${b.code}/`} className="card state flex gap-4 p-4 text-ink no-underline hover:no-underline">
+            <span className="avatar">
+              <Icon name="landmark" size={22} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="text-title-m text-ink">
+                {b.code} <span className="text-ink-2">· {b.name}</span>
+              </div>
+              <div className="text-body-m text-muted mt-1 tabular">
+                {num(b.calls)} tender calls · {num(b.selections)} selections · {num(b.suppliers)} suppliers
+              </div>
+              {byCode[b.code]?.note && <div className="text-body-s text-muted mt-1">{byCode[b.code].note}</div>}
             </div>
-            <div className="text-sm text-muted mt-1 tabular">
-              {num(b.calls)} tender calls · {num(b.selections)} selections · {num(b.suppliers)} suppliers
-            </div>
-            {byCode[b.code]?.note && <div className="text-xs text-muted mt-1">{byCode[b.code].note}</div>}
+            <Icon name="chevron-right" size={24} className="self-center text-ink-2" />
           </Link>
         ))}
       </div>

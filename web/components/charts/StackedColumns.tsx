@@ -68,7 +68,7 @@ export function StackedColumns({ data, series, title, xKey }: { data: Record<str
         </svg>
         {hover !== null && (
           <div
-            className="pointer-events-none absolute top-0 rounded-md border border-line bg-surface px-2 py-1 text-xs shadow-sm tabular"
+            className="tooltip pointer-events-none absolute top-0 z-10 tabular"
             style={{ left: `${((P.l + band * hover + band / 2) / W) * 100}%`, transform: "translateX(-50%)" }}
           >
             <div className="font-medium">{String(data[hover][xKey])}</div>

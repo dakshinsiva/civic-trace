@@ -354,10 +354,10 @@ export function CityMap({
       )}
       {tip && (
         <div
-          className="pointer-events-none absolute z-10 max-w-[13rem] rounded-md border border-line bg-surface/95 px-2.5 py-1.5 text-xs leading-snug shadow-md"
+          className="tooltip pointer-events-none absolute z-10 max-w-[14rem]"
           style={{ left: Math.min(tip.x + 12, tip.w - 220), top: Math.max(8, tip.y + 12) }}
         >
-          <div className="font-semibold text-ink">{tip.title}</div>
+          <div className="text-title-s text-ink">{tip.title}</div>
           <div className="text-ink-2">{tip.text}</div>
         </div>
       )}

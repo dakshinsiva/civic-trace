@@ -1,23 +1,25 @@
 import Link from "next/link";
 
 import { humanKey, inr, num, pct } from "@/lib/format";
+
+import { Icon } from "./Icon";
 import type { FlagStub } from "@/lib/types";
 
 export function PageTitle({ eyebrow, title, children }: { eyebrow?: string; title: string; children?: React.ReactNode }) {
   return (
     <div className="mb-6">
-      {eyebrow && <p className="text-sm text-muted mb-1">{eyebrow}</p>}
-      <h1 className="text-2xl font-semibold text-ink text-balance">{title}</h1>
-      {children && <div className="mt-2 max-w-3xl text-ink-2">{children}</div>}
+      {eyebrow && <p className="label-mono text-accent mb-3">{eyebrow}</p>}
+      <h1 className="text-headline-m text-ink text-balance">{title}</h1>
+      {children && <div className="mt-3 max-w-3xl text-body-l text-ink-2">{children}</div>}
     </div>
   );
 }
 
 export function Section({ n, title, children, id }: { n?: number; title: string; children: React.ReactNode; id?: string }) {
   return (
-    <section id={id} className="card p-5">
-      <h2 className="text-base font-semibold text-ink mb-3">
-        {n !== undefined && <span className="text-muted mr-2 tabular">{n}.</span>}
+    <section id={id} className="card p-5 sm:p-6">
+      <h2 className="text-title-l text-ink mb-4 flex items-baseline gap-3">
+        {n !== undefined && <span className="font-mono text-body-s text-accent tabular">{String(n).padStart(2, "0")}</span>}
         {title}
       </h2>
       {children}
@@ -27,10 +29,10 @@ export function Section({ n, title, children, id }: { n?: number; title: string;
 
 export function Stat({ label, value, sub }: { label: string; value: React.ReactNode; sub?: React.ReactNode }) {
   return (
-    <div className="card px-4 py-3">
-      <div className="text-xs text-muted">{label}</div>
-      <div className="text-xl font-semibold text-ink mt-0.5">{value}</div>
-      {sub && <div className="text-xs text-muted mt-0.5">{sub}</div>}
+    <div className="card px-4 py-4">
+      <div className="label-mono text-muted">{label}</div>
+      <div className="font-mono text-headline-s font-medium tracking-tight text-ink mt-2 tabular">{value}</div>
+      {sub && <div className="text-body-s text-muted mt-1">{sub}</div>}
     </div>
   );
 }
@@ -74,7 +76,7 @@ export function formatValue(k: string, v: unknown): React.ReactNode {
 export function KV({ data, skip = [] }: { data: Record<string, unknown>; skip?: string[] }) {
   const entries = Object.entries(data).filter(([k]) => !skip.includes(k));
   return (
-    <dl className="grid grid-cols-1 sm:grid-cols-[minmax(10rem,16rem)_1fr] gap-x-4 gap-y-1.5 text-sm">
+    <dl className="grid grid-cols-1 sm:grid-cols-[minmax(10rem,16rem)_1fr] gap-x-4 gap-y-2 text-body-m">
       {entries.map(([k, v]) => (
         <div key={k} className="contents">
           <dt className="text-ink-2">{humanKey(k)}</dt>
@@ -87,19 +89,19 @@ export function KV({ data, skip = [] }: { data: Record<string, unknown>; skip?: 
 
 export function RuleBadge({ n, name }: { n: number; name: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-2 py-0.5 text-xs text-ink-2 whitespace-nowrap">
-      <span className="font-semibold tabular">R{n}</span>
+    <span className="inline-flex h-6 items-center gap-1.5 rounded-sm border border-line px-2 text-body-s text-ink-2 whitespace-nowrap">
+      <span className="font-mono text-accent tabular">R{n}</span>
       {name}
     </span>
   );
 }
 
 export function FlagList({ flags, empty = "No warning signs for this record." }: { flags: FlagStub[]; empty?: string }) {
-  if (!flags.length) return <p className="text-sm text-muted">{empty}</p>;
+  if (!flags.length) return <p className="text-body-m text-muted">{empty}</p>;
   return (
     <ul className="space-y-2">
       {flags.map((f) => (
-        <li key={f.flag_id} className="text-sm">
+        <li key={f.flag_id} className="text-body-m">
           <RuleBadge n={f.rule_number} name={f.rule_plain_name ?? f.rule_name} />{" "}
           <Link href={`/flag/?id=${f.flag_id}`}>{f.headline}</Link>
         </li>
@@ -109,17 +111,25 @@ export function FlagList({ flags, empty = "No warning signs for this record." }:
 }
 
 export function Loading({ what }: { what: string }) {
-  return <p className="text-muted">Loading {what}…</p>;
+  return (
+    <div className="flex items-center gap-3 text-body-m text-muted" role="status">
+      <span className="h-4 w-4 animate-spin rounded-full border-[1.5px] border-accent border-t-transparent" aria-hidden />
+      Loading {what}…
+    </div>
+  );
 }
 
 export function ErrorNote({ message }: { message: string }) {
   return (
-    <div className="card p-4 text-sm">
-      <p className="text-ink">{message}</p>
-      <p className="text-muted mt-1">
-        Records can disappear from a release when they are suppressed during a correction, or when a newer release has
-        replaced them. See <Link href="/corrections/">corrections</Link>.
-      </p>
+    <div className="card flex gap-3 p-4 text-body-m">
+      <Icon name="circle-alert" size={20} className="mt-0.5 text-critical" />
+      <div>
+        <p className="text-ink">{message}</p>
+        <p className="text-muted mt-1">
+          Records can disappear from a release when they are suppressed during a correction, or when a newer release has
+          replaced them. See <Link href="/corrections/">corrections</Link>.
+        </p>
+      </div>
     </div>
   );
 }

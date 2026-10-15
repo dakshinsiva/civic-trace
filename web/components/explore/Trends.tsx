@@ -59,7 +59,7 @@ export function MonthlyVolume({ rows }: { rows: Fact[] }) {
         <line x1={P.l} x2={W - P.r} y1={y(0)} y2={y(0)} stroke="var(--axis)" />
       </svg>
       {hover !== null && (
-        <div className="pointer-events-none absolute top-0 rounded-md border border-line bg-surface px-2 py-1 text-xs shadow-sm tabular" style={{ left: `${((x(data[hover].month)! + x.bandwidth() / 2) / W) * 100}%`, transform: "translateX(-50%)" }}>
+        <div className="tooltip pointer-events-none absolute top-0 z-10 tabular" style={{ left: `${((x(data[hover].month)! + x.bandwidth() / 2) / W) * 100}%`, transform: "translateX(-50%)" }}>
           {monthLabel(data[hover].month)}: <strong>{data[hover].n.toLocaleString("en-IN")}</strong> tenders
         </div>
       )}
@@ -119,7 +119,7 @@ export function SingleBidTrend({ rows }: { rows: Fact[] }) {
         <line x1={P.l} x2={W - P.r} y1={y(0)} y2={y(0)} stroke="var(--axis)" />
       </svg>
       {hover !== null && (
-        <div className="pointer-events-none absolute top-0 rounded-md border border-line bg-surface px-2 py-1 text-xs shadow-sm tabular" style={{ left: `${(cx(shown[hover]) / W) * 100}%`, transform: "translateX(-50%)" }}>
+        <div className="tooltip pointer-events-none absolute top-0 z-10 tabular" style={{ left: `${(cx(shown[hover]) / W) * 100}%`, transform: "translateX(-50%)" }}>
           {shown[hover].q.replace("-", " ")}: <strong>{Math.round(shown[hover].rate * 100)}%</strong> ({shown[hover].one} of {shown[hover].known} contracts)
         </div>
       )}

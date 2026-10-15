@@ -60,7 +60,7 @@ export default function FindingsPage() {
 
       {/* The verdict */}
       <section className="card p-6 border-l-4 border-l-[var(--series-2)]">
-        <h2 className="text-xl font-semibold text-ink">What the records say, in short</h2>
+        <h2 className="text-title-l text-ink">What the records say, in short</h2>
         <div className="mt-3 space-y-3 text-base text-ink leading-relaxed max-w-3xl">
           <p>
             <strong>The clearest pattern is weak competition.</strong> In {inWords(lowComp)} contracts ({pct(lowComp)}), two
@@ -105,7 +105,7 @@ export default function FindingsPage() {
 
       {/* The numbers */}
       <section>
-        <h2 className="text-2xl font-semibold text-ink">The numbers behind it</h2>
+        <h2 className="text-headline-s text-ink">The numbers behind it</h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <Big label="Only one company competed" stat={f.single_bidder} note="Open contracts with a winner and a published bidder count. EU benchmark: above 20% is poor." />
           <Big label="Exactly two companies competed" stat={f.two_bidders} note="The most common situation. Two bids can satisfy the rules while still not being real competition." />
@@ -118,7 +118,7 @@ export default function FindingsPage() {
 
       {/* Competition chart */}
       <section className="card p-5">
-        <h2 className="text-lg font-semibold text-ink">Does competition change the price?</h2>
+        <h2 className="text-title-l text-ink">Does competition change the price?</h2>
         <p className="text-sm text-ink-2 mt-1">
           Typical winning price compared with the government&apos;s <Term k="estimate">official estimate</Term>, by how many
           companies competed.
@@ -169,7 +169,7 @@ export default function FindingsPage() {
 
       <section className="grid gap-4 md:grid-cols-2">
         <div className="card p-5">
-          <h2 className="text-lg font-semibold text-ink">Where to look next</h2>
+          <h2 className="text-title-l text-ink">Where to look next</h2>
           <ul className="mt-2 space-y-2 text-sm">
             <li>
               <Link href="/#explore">The map</Link>: which areas show thin competition, prices at the estimate, or a few contractors
@@ -184,7 +184,7 @@ export default function FindingsPage() {
           </ul>
         </div>
         <div className="card p-5">
-          <h2 className="text-lg font-semibold text-ink">What would change this picture</h2>
+          <h2 className="text-title-l text-ink">What would change this picture</h2>
           <ul className="mt-2 list-disc pl-5 space-y-1 text-sm text-ink-2">
             <li>The names of bidders rejected at the document check, which the portal doesn&apos;t publish.</li>
             <li>Company registration numbers, which would show when several &ldquo;competitors&rdquo; are related firms.</li>
@@ -207,7 +207,7 @@ function Big({ label, stat, note }: { label: string; stat: Stat; note: string })
     <div className="card p-4">
       <div className="text-sm text-ink-2">{label}</div>
       <div className="mt-1 flex items-baseline gap-2">
-        <span className="text-3xl font-semibold text-ink">{pct(stat.share, 0)}</span>
+        <span className="text-headline-l text-ink">{pct(stat.share, 0)}</span>
         <span className="text-sm text-muted">{inWords(stat.share)}</span>
       </div>
       <div className="text-xs text-muted mt-1 tabular">
@@ -243,7 +243,8 @@ function CompetitionBars({ rows }: { rows: { label: string; v: number | null; n:
               {r.label}
             </text>
             <rect x={x} y={y} width={w} height={24} rx={4} fill={r.color} />
-            <text x={v < 0 ? x - 6 : x + w + 6} y={y + 17} textAnchor={v < 0 ? "end" : "start"} fontSize={12} fill="var(--ink)" className="tabular">
+            {/* Values for bars that run left sit on the free side of the zero line, clear of the row labels. */}
+            <text x={v < 0 ? mid + 6 : x + w + 6} y={y + 17} fontSize={12} fill="var(--ink)" className="tabular">
               {r.v == null ? "—" : `${r.v > 0 ? "+" : ""}${r.v.toFixed(1)}%`} <tspan fill="var(--muted)">(n={r.n})</tspan>
             </text>
           </g>

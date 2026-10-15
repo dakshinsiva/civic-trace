@@ -13,7 +13,7 @@ export default function GlossaryPage() {
       <dl className="card divide-y divide-[var(--grid)]">
         {entries.map(([k, g]) => (
           <div key={k} id={k} className="p-4">
-            <dt className="font-semibold text-ink">{g.term}</dt>
+            <dt className="text-title-m text-ink">{g.term}</dt>
             <dd className="text-sm text-ink-2 mt-1">{g.plain}</dd>
           </div>
         ))}

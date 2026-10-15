@@ -108,8 +108,8 @@ function MarketDetail({ m, names }: { m: Market; names: Record<string, string> }
   const restWins = rest.reduce((a, s) => a + s.wins, 0);
   const max = Math.max(...top.map((s) => s.wins / m.n), even);
   return (
-    <div className="rounded-lg border border-line p-4">
-      <h3 className="font-semibold text-ink">{m.division}</h3>
+    <div className="rounded-md border border-line p-4">
+      <h3 className="text-title-m text-ink">{m.division}</h3>
       <p className="text-sm text-ink-2 mt-1">
         {m.n} contracts went to {m.suppliers.length} contractors. Shared evenly, each would have about{" "}
         <strong>{Math.round(even * 100)}%</strong>. The work behaved as if split among about{" "}

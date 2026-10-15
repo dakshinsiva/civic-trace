@@ -63,15 +63,15 @@ export function TendersExplorer({ buyers }: { buyers: string[] }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-2 items-end text-sm" role="group" aria-label="Filters">
+      <div className="card flex flex-wrap gap-3 items-end p-4" role="group" aria-label="Filters">
         <Select label="Buyer" value={buyer} onChange={(v) => set("buyer", v)} options={buyers.map((b) => [b, b])} />
         <Select label="Fiscal year (published)" value={fy} onChange={(v) => set("fy", v)} options={options.fys.map((f) => [f, f])} />
         <Select label="Status" value={status} onChange={(v) => set("status", v)} options={options.sts.map((s) => [s, statusLabel(s)])} />
         <Select label="Work category" value={cat} onChange={(v) => set("cat", v)} options={options.cats.map((c) => [c, c])} />
         <Select label="Indicators" value={flagged} onChange={(v) => set("flagged", v)} options={[["1", "With tender-level indicators"]]} />
-        <label className="flex flex-col gap-1">
-          <span className="text-xs text-muted">Search</span>
-          <input defaultValue={q} onChange={(e) => set("q", e.target.value)} placeholder="title, tender no., supplier, ward" className="rounded-md border border-line bg-surface px-2 py-1.5 w-64" />
+        <label className="flex w-full flex-col gap-1 sm:w-auto">
+          <span className="field-label">Search</span>
+          <input defaultValue={q} onChange={(e) => set("q", e.target.value)} placeholder="title, tender no., supplier, ward" className="field w-full sm:w-64" />
         </label>
       </div>
       <p className="text-sm text-muted tabular">
@@ -112,13 +112,13 @@ export function TendersExplorer({ buyers }: { buyers: string[] }) {
       </div>
       {rows.length > PAGE && (
         <div className="flex gap-3 text-sm items-center">
-          <button disabled={page === 0} onClick={() => set("page", String(page - 1))} className="rounded-md border border-line px-3 py-1 disabled:opacity-40">
+          <button disabled={page === 0} onClick={() => set("page", String(page - 1))} className="btn-outline disabled:pointer-events-none disabled:opacity-40">
             Previous
           </button>
           <span className="tabular text-muted">
             Page {page + 1} of {Math.ceil(rows.length / PAGE)}
           </span>
-          <button disabled={(page + 1) * PAGE >= rows.length} onClick={() => set("page", String(page + 1))} className="rounded-md border border-line px-3 py-1 disabled:opacity-40">
+          <button disabled={(page + 1) * PAGE >= rows.length} onClick={() => set("page", String(page + 1))} className="btn-outline disabled:pointer-events-none disabled:opacity-40">
             Next
           </button>
         </div>

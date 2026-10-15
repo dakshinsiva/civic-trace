@@ -157,10 +157,10 @@ function ScatterTip({ p, left, top }: { p: { r: Fact; ratio: number; g: string }
   const diff = (p.ratio - 1) * 100;
   return (
     <div
-      className="pointer-events-none absolute z-10 w-72 rounded-md border border-line bg-surface p-3 text-xs shadow-lg"
+      className="tooltip pointer-events-none absolute z-10 w-72 p-3"
       style={{ left: `${Math.min(70, Math.max(0, left - 10))}%`, top: `${top > 55 ? top - 40 : top + 4}%` }}
     >
-      <div className="font-medium text-ink line-clamp-2">{data?.title ?? "Loading…"}</div>
+      <div className="text-title-s text-ink line-clamp-2">{data?.title ?? "Loading…"}</div>
       <div className="text-muted mt-0.5">
         {p.r.buyer} · {p.r.division}
       </div>
