@@ -3,32 +3,40 @@
   <img src="web/public/logo.svg" alt="CivicTrace" height="44">
 </picture>
 
-# CivicTrace — Bengaluru
+# CivicTrace Bengaluru
 
-An open-source project that makes Bengaluru's public works tenders easy to follow: how each contract is tendered, who
-wins it, and where the city's money goes.
+**See who gets Bengaluru's public works contracts, what they cost and where the money goes, ward by ward.**
 
-Every road, drain, footpath and building repair the city pays for starts as a tender on the Karnataka Public
-Procurement Portal (KPPP). The records are public, but they are spread across thousands of portal pages, spreadsheets
-and amendment notices, which are hard to read one at a time and impossible to compare. CivicTrace collects them: 13,528
-tender calls published since May 2023 by BBMP, the Greater Bengaluru Authority, the five city corporations, B-SMILE and
-BSWML. It turns them into a site where anyone can answer plain questions:
+CivicTrace Bengaluru is a free, open-source website for tracking public works tenders in Bengaluru (Bangalore): the
+roads, drains, footpaths, streetlights, lakes and building repairs the city pays contractors to do. It reads the public
+records on the Karnataka Public Procurement Portal (KPPP) and puts them on a map that anyone can use.
 
-- **Where is the money going?** Winning bids added up by constituency area and ward, per resident, by department, by
-  type of work and by year.
-- **Who wins the work?** Every contractor as the portal names them, what they won and where, and how much of an area's
-  work goes to a few firms.
-- **How did each tender run?** It shows how long companies had to bid and how many reached the price round. It shows
-  what each one offered and how the winning price compares with the government's own estimate. It also lists every
-  deadline change along the way.
-- **What looks unusual?** Each tender is checked with transparent, testable rules for warning signs of tender
-  manipulation. Every warning sign comes with its evidence, a comparison baseline, the period and data coverage, source
-  links, plausible innocent explanations, and known limitations.
+**Open the site: [civictrace-bengaluru.vercel.app](https://civictrace-bengaluru.vercel.app)**
 
-**Live site:** [civictrace-bengaluru.vercel.app](https://civictrace-bengaluru.vercel.app)
+## How to use it
 
-Everything is built from public records and links back to its source. The code is open, and so are the rules with
-their thresholds and the way each number is computed, so anyone can inspect, rerun or challenge them.
+1. **Find your area.** Type your ward or neighbourhood, in English or Kannada, or tap **Use my location**.
+2. **Look at the map.** Each dot is a contract. Point at one, or tap it on a phone, to see what the work was, who won
+   it, the winning price, the government's own estimate and how many companies bid.
+3. **Compare areas.** The list beside the map ranks places by winning bids per resident, by how often only one company
+   bid, and more. The charts below the map follow the area you pick.
+4. **Read the warning signs.** Every tender is checked for six patterns that can point to a rigged tender. Each warning
+   sign shows its evidence and the ordinary reasons it could happen.
+5. **Share what you find.** Every view has its own link, so you can send your neighbours the page for your ward.
+
+## What it covers
+
+- **Who issues the tenders:** BBMP (Bruhat Bengaluru Mahanagara Palike), the Greater Bengaluru Authority (GBA), the
+  five city corporations that replaced BBMP in 2025 (Central, East, North, South and West), B-SMILE and Bengaluru
+  Solid Waste Management Limited.
+- **What is recorded:** 13,528 public works tenders published since May 2023, with the estimate, the winning price,
+  the winning contractor, the number of bidders, the deadlines and every change made after publication.
+- **Where:** all 369 wards and 28 assembly constituencies, on the official 2025 ward map.
+- **Who it is for:** residents and resident welfare associations (RWAs), journalists, researchers, elected
+  representatives' offices, and anyone who wants to know how their area's money is spent.
+
+Everything comes from public records and links back to its source. The code, the rules and the way each number is
+calculated are open, so anyone can check them.
 
 > **Warning signs are not proof.** They mark patterns worth a closer look. Nothing in this project alleges wrongdoing
 > by any person or company.
@@ -78,7 +86,7 @@ python3 -m http.server 3210 --directory web/out
 - **Department pages**: each department's tenders and the value of its winning bids by year, its local offices
   (divisions), and how competition and prices compare there.
 - **Supplier pages**: every tender a contractor won, from which department and in which year, with the price.
-- **How widespread?** (`/findings`): plain-language answer to "how rampant is it?". Prevalence of each warning sign with
+- **How widespread?** (`/findings`): plain-language answer to "how common are the warning signs?". Prevalence of each warning sign with
   95% intervals, the competition-vs-price comparison (overall and within each type of work), and an auto-generated
   verdict that changes with the data. Details are fetched in a month-stratified random order, so partial data works as a
   random sample.
@@ -116,14 +124,6 @@ Thresholds and all explanatory text live in `pipeline/config/rules.yaml`. Each r
   official document, with a page locator and hashed evidence, and need a second reviewer. They are only exported with
   `./tasks.sh internal`, and `./tasks.sh data` fails if relationship data leaks into the public build. A person appears
   only if a complete documented chain links them to a KPPP supplier; holding an office alone never does.
-
-### Before any public deployment
-
-1. Corrections contact: `dakshinrajsiva@gmail.com` (default in `web/next.config.ts`; override with
-   `NEXT_PUBLIC_CORRECTIONS_EMAIL` for forks).
-2. Have a media lawyer review the site (criminal defamation: BNS §356; truth and public-good exceptions).
-3. Confirm the corrections response commitment (currently 3 working days) is one you can keep.
-4. Keep the relationship layer internal until claims are independently reviewed and legally cleared.
 
 ## Taking part
 
