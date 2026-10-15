@@ -112,7 +112,7 @@ export function MapExplorer({
     return () => window.removeEventListener("civictrace:hover", off);
   }, [hintDismissed]);
 
-  // Arriving from site search on another page with a place picked: bring the map into view once.
+  // Arriving from site search on another page, or searching before the map had loaded: bring the map into view once.
   useEffect(() => {
     try {
       if (sessionStorage.getItem(SCROLL_TO_MAP_KEY)) {
