@@ -10,9 +10,10 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import re
 import shutil
 import sqlite3
-from collections import defaultdict
+from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -405,7 +406,7 @@ def export_all(conn: sqlite3.Connection, out: Path, include_relationships: bool 
     }
     _write(out / "overview.json", overview)
     _write(out / "facts.json", _facts(calls, flags, suppressed_suppliers))
-    _write(out / "findings.json", _findings(calls, flags, rule_summary, cfg))
+    _write(out / "findings.json", {**_findings(calls, flags, rule_summary, cfg), "bid_screens": _bid_screens(bidders, calls)})
     _write(out / "unavailable.json", _unavailable(calls))
 
     # ------------------------------------------------------------ meta / methodology / coverage
@@ -709,6 +710,66 @@ def _findings(calls: pd.DataFrame, flags: list[dict], rule_summary: dict, cfg: d
             "listed": n_listed,
         },
         "rules": {rid: dict(v) for rid, v in rule_summary.items()},
+    }
+
+
+# Bid-rigging screens from the OECD's "Guidelines for fighting bid rigging" checklist: the same
+# firms meeting again and again, and a firm that always loses to the same rival (a cover bidder).
+# Aggregates only. Bidders are identified by name (the comparative statement has no IDs), so a
+# firm spelled two ways counts as two firms, which can only make the screens find less.
+SCREEN_MIN_MEETINGS = 5
+_RANK_NUM = re.compile(r"\d+")
+
+
+def _bidder_key(name: str | None) -> str:
+    return re.sub(r"[^A-Z0-9]+", " ", (name or "").upper()).strip()
+
+
+def _bid_screens(bidders: dict[int, list[dict]], calls: pd.DataFrame) -> dict:
+    eligible = calls[(calls["detail_state"] != "pending") & (~calls["quarantined"]) & (calls["tender_type"] == "OPEN")]
+    gaps_two: list[float] = []
+    gaps_more: list[float] = []
+    duels: list[tuple[tuple[str, str], str]] = []  # (pair, loser) for each two-bid tender
+    for nit in eligible["nit_id"].astype(int):
+        bids = [b for b in bidders.get(nit, []) if (b.get("total_bid") or 0) > 0]
+        if len(bids) < 2:
+            continue
+        rank = lambda b: int(m.group()) if (m := _RANK_NUM.search(b.get("rank") or "")) else 99  # noqa: E731
+        bids.sort(key=lambda b: (b["total_bid"], rank(b)))
+        gap = (bids[1]["total_bid"] - bids[0]["total_bid"]) / bids[0]["total_bid"] * 100
+        (gaps_two if len(bids) == 2 else gaps_more).append(gap)
+        if len(bids) == 2:
+            winner, loser = _bidder_key(bids[0]["raw_name"]), _bidder_key(bids[1]["raw_name"])
+            if winner and loser and winner != loser:
+                duels.append((tuple(sorted((winner, loser))), loser))
+
+    meetings = Counter(pair for pair, _ in duels)
+    losers: dict[tuple[str, str], set[str]] = defaultdict(set)
+    for pair, loser in duels:
+        losers[pair].add(loser)
+    regular = {pair: m for pair, m in meetings.items() if m >= SCREEN_MIN_MEETINGS}
+    same_loser = [pair for pair in regular if len(losers[pair]) == 1]
+    n = len(duels)
+
+    def share(k: int, n: int) -> dict:
+        return {"k": int(k), "n": int(n), "share": round(k / n, 4) if n else None, "ci95": _wilson(int(k), int(n))}
+
+    def gaps(g: list[float]) -> dict:
+        s = pd.Series(g, dtype=float)
+        return {"n": int(len(s)), "median_pct": round(float(s.median()), 2) if len(s) else None, "within_1pct": share(int((s <= 1).sum()), len(s))}
+
+    return {
+        "min_meetings": SCREEN_MIN_MEETINGS,
+        "two_bidder_tenders": n,
+        "pairs": len(meetings),
+        "met_min": share(sum(regular.values()), n),
+        "met_10_plus": share(sum(m for m in meetings.values() if m >= 10), n),
+        "regular_pairs": len(regular),
+        "same_loser_pairs": len(same_loser),
+        # If every meeting were a fair coin flip, the chance one firm loses all m meetings is 2 * 0.5**m.
+        "same_loser_expected": round(sum(2 * 0.5**m for m in regular.values()), 1),
+        "same_loser_tenders": share(sum(regular[p] for p in same_loser), n),
+        "runner_up_gap": {"two": gaps(gaps_two), "three_plus": gaps(gaps_more)},
     }
 
 

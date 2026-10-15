@@ -27,6 +27,7 @@ function inWords(x: number | null): string {
   if (x >= 0.14) return "about 1 in 6";
   if (x >= 0.11) return "about 1 in 8";
   if (x >= 0.08) return "about 1 in 10";
+  if (x >= 0.06) return "about 1 in 15";
   if (x >= 0.04) return "about 1 in 20";
   return "very few";
 }
@@ -45,6 +46,7 @@ export default function FindingsPage() {
   const rushedRare = (f.window_under_7_days.share ?? 1) < 0.05;
   const changedRare = (f.changed_3_plus_times.share ?? 1) < 0.05;
   const competitionEffect = b.three_plus != null && b.two != null ? b.two - b.three_plus : null;
+  const screens = f.bid_screens;
   // Still downloading (tenders not yet tried) vs. done, with only the portal's refusals missing.
   const stillReading =
     f.coverage.pending_calls != null
@@ -93,6 +95,14 @@ export default function FindingsPage() {
               the typical winning price was {vs(b.one)}; with two, {vs(b.two)}. When three or more companies competed, it was{" "}
               {vs(b.three_plus)}
               {competitionEffect != null && competitionEffect > 3 ? `, a difference of about ${competitionEffect.toFixed(0)} percentage points` : ""}.
+            </p>
+          )}
+          {screens && screens.same_loser_pairs > 2 * screens.same_loser_expected && (
+            <p>
+              <strong>Patterns specific to bid-rigging show up in a smaller share.</strong> In {pct(screens.met_min.share)} of
+              contracts with two bidders, the same two firms had faced each other at least {screens.min_meetings} times. In{" "}
+              {pct(screens.same_loser_tenders.share, 1)}, one of those firms had lost every single time, which chance alone
+              would rarely produce. <a href="#bid-rigging">How this is checked</a>.
             </p>
           )}
           <p>
@@ -186,6 +196,39 @@ export default function FindingsPage() {
           </div>
         )}
       </section>
+
+      {screens && screens.two_bidder_tenders > 0 && (
+        <section id="bid-rigging" className="card p-5 scroll-mt-24">
+          <h2 className="text-title-l text-ink">Signs of bid-rigging</h2>
+          <p className="text-sm text-ink-2 mt-1 max-w-3xl">
+            Two checks that competition authorities use to spot rigged tenders, from the OECD&apos;s guidelines on bid rigging,
+            run on the {num(screens.two_bidder_tenders)} open tenders where exactly two companies bid. These are totals only;
+            no firm is named here.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <Big
+              label={`The same two firms, ${screens.min_meetings} or more times`}
+              stat={screens.met_min}
+              note={`The two bidders had faced each other in at least ${screens.min_meetings} tenders (${num(screens.regular_pairs)} pairs). Firms taking turns to win look like this. So does an area where only two firms do this kind of work.`}
+            />
+            <Big
+              label="One firm lost to the same rival every time"
+              stat={screens.same_loser_tenders}
+              note={`In ${num(screens.same_loser_pairs)} of those ${num(screens.regular_pairs)} pairs, one firm lost every meeting. If each contest were a coin flip, about ${screens.same_loser_expected} pairs would. A firm that bids only to lose (a "cover bid") looks like this. So does a rival that is simply always cheaper.`}
+            />
+            <Big
+              label="Losing bid within 1% of the winner"
+              stat={screens.runner_up_gap.two.within_1pct}
+              note={`Typical gap between the two bids: ${screens.runner_up_gap.two.median_pct ?? "—"}% (with three or more bidders: ${screens.runner_up_gap.three_plus.median_pct ?? "—"}%). Cover bids sit just above the winner. So do honest bids when both firms quote close to the government's published rates.`}
+            />
+          </div>
+          <p className="text-xs text-muted mt-3 max-w-3xl">
+            Bidders are matched by the name the portal prints, since it publishes no company numbers. A firm spelled two ways
+            counts as two firms, which makes these checks find less, not more. Related firms bidding under different names
+            can&apos;t be seen at all.
+          </p>
+        </section>
+      )}
 
       <section className="grid gap-4 md:grid-cols-2">
         <div className="card p-5">

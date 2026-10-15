@@ -54,6 +54,20 @@ export type Findings = {
   single_bidder_value: number;
   selected_value: number;
   status_all_listed: { awarded: number; evaluation_completed_no_award: number; recalled: number; retendered: number; listed: number };
+  bid_screens?: BidScreens;
+};
+
+export type BidScreens = {
+  min_meetings: number;
+  two_bidder_tenders: number;
+  pairs: number;
+  met_min: Stat;
+  met_10_plus: Stat;
+  regular_pairs: number;
+  same_loser_pairs: number;
+  same_loser_expected: number;
+  same_loser_tenders: Stat;
+  runner_up_gap: Record<"two" | "three_plus", { n: number; median_pct: number | null; within_1pct: Stat }>;
 };
 
 export type Unavailable = {
