@@ -206,7 +206,8 @@ def export_all(conn: sqlite3.Connection, out: Path, include_relationships: bool 
         "work_category", "tender_type", "notice_type", "inviting_strategy", "evaluation_type", "bid_value_type",
         "tax_type", "published_by_post", "title", "ecv", "ecv_public", "sub_estimate_total", "published_at",
         "close_at_original", "close_at_final", "query_close_at", "tech_open_at", "no_of_calls", "retendered",
-        "recalled", "pre_bid_meeting", "status", "award_date", "detail_state", "fy_published", "fy_decision",
+        "recalled", "pre_bid_meeting", "status", "award_date", "detail_state", "detail_attempts", "detail_error",
+        "detail_fetched_at", "fy_published", "fy_decision",
         "n_price_stage_bidders", "n_corrigenda", "n_deadline_extensions",
     ]
     tender_index = []
@@ -392,6 +393,7 @@ def export_all(conn: sqlite3.Connection, out: Path, include_relationships: bool 
     _write(out / "overview.json", overview)
     _write(out / "facts.json", _facts(calls, flags, suppressed_suppliers))
     _write(out / "findings.json", _findings(calls, flags, rule_summary, cfg))
+    _write(out / "unavailable.json", _unavailable(calls))
 
     # ------------------------------------------------------------ meta / methodology / coverage
     coverage = _coverage(calls)
@@ -629,6 +631,8 @@ def _findings(calls: pd.DataFrame, flags: list[dict], rule_summary: dict, cfg: d
             "listed_calls": n_listed,
             "fetched_calls": n_fetched,
             "fetched_share": round(n_fetched / n_listed, 4) if n_listed else None,
+            "unavailable_calls": int((calls["detail_state"] == "unavailable").sum()),
+            "pending_calls": int((calls["detail_state"] == "pending").sum()),
             "sampling": "Details are fetched month by month in a pseudo-random order within each month, so the fetched set approximates a random sample of all listed tenders.",
         },
         "any_warning_sign": stat(any_flag, n_fetched),
@@ -654,6 +658,30 @@ def _findings(calls: pd.DataFrame, flags: list[dict], rule_summary: dict, cfg: d
         },
         "rules": {rid: dict(v) for rid, v in rule_summary.items()},
     }
+
+
+def _unavailable(calls: pd.DataFrame) -> dict:
+    """Tenders whose details the portal would not return, even after retries. Published so readers
+    can see exactly what is missing, rather than have it silently left out."""
+    u = calls[calls["detail_state"] == "unavailable"].sort_values("published_at", ascending=False)
+    attempts = u["detail_attempts"] if "detail_attempts" in u else pd.Series([None] * len(u), index=u.index)
+    errors = u["detail_error"] if "detail_error" in u else pd.Series([None] * len(u), index=u.index)
+    rows = [
+        {
+            "nit_id": int(r["nit_id"]),
+            "tender_number": r["tender_number"],
+            "title": r["title"],
+            "buyer": r["buyer_code"],
+            "status": r["status"],
+            "published_at": _clean(r["published_at"]),
+            "attempts": None if pd.isna(a) else int(a),
+            "last_tried": _clean(r["detail_fetched_at"]),
+            "error": None if pd.isna(e) else e,
+        }
+        for (_, r), a, e in zip(u.iterrows(), attempts, errors)
+    ]
+    by_buyer = {k: int(v) for k, v in u["buyer_code"].value_counts().items()}
+    return {"count": len(rows), "listed": int(len(calls)), "by_buyer": by_buyer, "tenders": rows}
 
 
 def _windows(calls: pd.DataFrame) -> pd.DataFrame:
@@ -762,6 +790,7 @@ def _coverage(calls: pd.DataFrame) -> list[dict]:
             "calls": int(len(g)),
             "details_fetched": round(float((g["detail_state"] != "pending").mean()), 4),
             "detail_unavailable": int((g["detail_state"] == "unavailable").sum()),
+            "detail_pending": int((g["detail_state"] == "pending").sum()),
             "first_published": g["published_at"].min(),
             "last_published": g["published_at"].max(),
             "fields": {},

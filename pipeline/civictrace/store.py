@@ -218,7 +218,14 @@ def now_iso() -> str:
 # Columns added after the first schema version: (table, column, type).
 MIGRATIONS = [
     ("tender_call", "published_by_post", "TEXT"),
+    ("tender_call", "detail_attempts", "INTEGER"),  # how many times we tried to fetch this call's details
+    ("tender_call", "detail_error", "TEXT"),  # what failed on the last attempt (None when it succeeded)
 ]
+# Run once, right after a column is first added.
+BACKFILL = {
+    "detail_attempts": "UPDATE tender_call SET detail_attempts = 1 WHERE detail_state != 'pending'",
+    "detail_error": "UPDATE tender_call SET detail_error = 'full record: the portal returned an error' WHERE detail_state = 'unavailable'",
+}
 
 
 def connect(path: Path = DB_PATH) -> sqlite3.Connection:
@@ -231,6 +238,8 @@ def connect(path: Path = DB_PATH) -> sqlite3.Connection:
         cols = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
         if col not in cols:
             conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {typ}")
+            if col in BACKFILL:
+                conn.execute(BACKFILL[col])
     conn.commit()
     return conn
 

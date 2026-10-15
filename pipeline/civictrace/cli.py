@@ -25,6 +25,8 @@ def ingest_kppp(
     priority_fy: str = typer.Option("", help="Fetch this fiscal year's details first (default: interleave all months)."),
     min_interval: float = typer.Option(1.0, help="Seconds between request starts, across all workers (be polite: >= 1)."),
     workers: int = typer.Option(2, help="Concurrent workers sharing the global rate limit (max 3)."),
+    retry_failed: bool = typer.Option(False, "--retry-failed", help="Only re-try calls whose details failed earlier."),
+    max_attempts: int = typer.Option(3, help="With --retry-failed: skip calls already tried this many times."),
     db: Path = typer.Option(DB_PATH),
 ) -> None:
     """Ingest Bengaluru works tenders from KPPP (resumable)."""
@@ -45,6 +47,8 @@ def ingest_kppp(
         min_interval=min_interval,
         workers=workers,
         db_path=db,
+        retry_failed=retry_failed,
+        max_attempts=max_attempts,
     )
 
 

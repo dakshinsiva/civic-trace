@@ -145,6 +145,27 @@ def _quarantine(conn, nit_id: int, reason: str, detail: str) -> None:
     )
 
 
+def retry_queue(conn: sqlite3.Connection, max_attempts: int = 3, dept_ids: list[int] | None = None) -> list[sqlite3.Row]:
+    """Calls whose details failed (portal error) or were never saved (an exception mid-fetch),
+    and that have been tried fewer than `max_attempts` times."""
+    dept_clause = f" AND dept_id IN ({','.join(str(int(d)) for d in dept_ids)})" if dept_ids else ""
+    rows = conn.execute(
+        f"""SELECT * FROM tender_call
+            WHERE detail_state IN ('unavailable', 'pending') AND COALESCE(detail_attempts, 0) < ? {dept_clause}""",
+        (max_attempts,),
+    ).fetchall()
+    return _interleave_by_month(rows)
+
+
+def _record_failure(conn: sqlite3.Connection, nit: int, error: str) -> None:
+    """An attempt that raised: count it, keep the call queued, and say what went wrong."""
+    conn.execute(
+        "UPDATE tender_call SET detail_attempts = COALESCE(detail_attempts, 0) + 1, detail_error = ? WHERE nit_id = ?",
+        (error[:300], nit),
+    )
+    conn.commit()
+
+
 def detail_queue(
     conn: sqlite3.Connection, refresh_days: int = 7, priority_fy: str | None = None, dept_ids: list[int] | None = None
 ) -> list[sqlite3.Row]:
@@ -199,6 +220,7 @@ def fetch_details(client: PoliteClient, conn: sqlite3.Connection, call: sqlite3.
     tn = call["tender_number"]
     state = "ok"
     updates: dict = {}
+    problems: list[str] = []
 
     f = client.fetch(kppp.full_view_url(nit), archive_as=f"kppp/full/{nit}")
     doc = None
@@ -224,6 +246,7 @@ def fetch_details(client: PoliteClient, conn: sqlite3.Connection, call: sqlite3.
                     updates[k] = d[k]
     else:
         state = "unavailable"
+        problems.append(f"full record: {'HTTP ' + str(f.status) if f.status != 200 else 'empty or unreadable response'}")
 
     # Corrigenda
     if state != "quarantined":
@@ -243,8 +266,10 @@ def fetch_details(client: PoliteClient, conn: sqlite3.Connection, call: sqlite3.
                 upsert(conn, "amendment", {"nit_id": nit, **a, "doc_id": cdoc}, ("nit_id", "seq"))
             first_close = next((a["close_original"] for a in amendments if a["close_original"]), None)
             updates["close_at_original"] = first_close or updates.get("close_at_final") or call["close_at_final"]
-        elif state == "ok":
-            state = "unavailable"
+        else:
+            problems.append(f"corrigenda: {'HTTP ' + str(c.status) if c.status != 200 else 'empty or unreadable response'}")
+            if state == "ok":
+                state = "unavailable"
 
     # Award / selected bid + price-stage bidders
     if state != "quarantined" and call["status"] in kppp.STATUSES_WITH_SELECTION:
@@ -299,6 +324,8 @@ def fetch_details(client: PoliteClient, conn: sqlite3.Connection, call: sqlite3.
                         upsert(conn, "bidder", {"nit_id": nit, **b}, ("nit_id", "position"))
 
     updates.update({"detail_state": state, "detail_fetched_at": now_iso(), "detail_status": call["status"]})
+    updates["detail_attempts"] = (call["detail_attempts"] if "detail_attempts" in call.keys() and call["detail_attempts"] else 0) + 1
+    updates["detail_error"] = "; ".join(problems) or None
     sets = ",".join(f"{k}=?" for k in updates)
     conn.execute(f"UPDATE tender_call SET {sets} WHERE nit_id=?", [*updates.values(), nit])
     conn.commit()
@@ -316,6 +343,8 @@ def run(
     min_interval: float = 1.0,
     workers: int = 1,
     db_path: Path | None = None,
+    retry_failed: bool = False,
+    max_attempts: int = 3,
 ) -> None:
     run_id = uuid.uuid4().hex[:12]
     conn.execute("INSERT INTO ingest_run(run_id, started_at) VALUES (?,?)", (run_id, now_iso()))
@@ -329,7 +358,11 @@ def run(
                 stats = enumerate_calls(client, conn, buyers)
                 log(f"enumerated {stats['rows']} rows ({stats['new_or_changed']} new/changed)")
             if do_details:
-                queue = detail_queue(conn, priority_fy=priority_fy, dept_ids=[b["dept_id"] for b in buyers])
+                if retry_failed:
+                    queue = retry_queue(conn, max_attempts=max_attempts, dept_ids=[b["dept_id"] for b in buyers])
+                    log(f"retry pass: {len(queue)} calls whose details failed (fewer than {max_attempts} attempts)")
+                else:
+                    queue = detail_queue(conn, priority_fy=priority_fy, dept_ids=[b["dept_id"] for b in buyers])
                 if limit:
                     queue = queue[:limit]
                 log(f"detail queue: {len(queue)} calls, {workers} worker(s), ≤1 request/{min_interval}s overall")
@@ -347,6 +380,10 @@ def run(
                     except Exception as exc:  # keep going; record and move on
                         wconn.rollback()
                         log(f"error nit={call['nit_id']}: {exc!r}")
+                        try:
+                            _record_failure(wconn, int(call["nit_id"]), f"error while saving: {exc!r}")
+                        except Exception:  # the disk may be full: nothing more we can do here
+                            pass
                         state = "error"
                     with lock:
                         counts[state] = counts.get(state, 0) + 1

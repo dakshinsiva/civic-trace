@@ -173,6 +173,9 @@ export type TenderDoc = {
   status: string;
   award_date: string | null;
   detail_state: string;
+  detail_attempts?: number | null;
+  detail_error?: string | null;
+  detail_fetched_at?: string | null;
   fy_published: string | null;
   n_price_stage_bidders: number | null;
   n_corrigenda: number;

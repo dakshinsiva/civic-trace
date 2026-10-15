@@ -44,6 +44,26 @@ export function TenderView() {
         </div>
       )}
 
+      {t.detail_state === "unavailable" && (
+        <div role="note" className="rounded-md border border-notice-border bg-notice-bg px-4 py-3 text-sm text-notice-ink">
+          <strong>Part of this record is missing.</strong> The government portal returned an error each time we asked for this
+          tender&apos;s full details
+          {t.detail_attempts ? ` (${t.detail_attempts} attempt${t.detail_attempts === 1 ? "" : "s"}` : " ("}
+          {t.detail_fetched_at ? `, last tried ${date(t.detail_fetched_at)}` : ""}
+          {t.detail_error ? `; ${t.detail_error}` : ""}). What you see comes from the portal&apos;s tender list and whatever
+          parts did load. Warning signs that need the missing details are not calculated for it.{" "}
+          <Link href="/coverage/#unavailable" className="underline text-notice-ink">
+            All records we couldn&apos;t retrieve
+          </Link>
+        </div>
+      )}
+      {t.detail_state === "pending" && (
+        <div role="note" className="rounded-md border border-notice-border bg-notice-bg px-4 py-3 text-sm text-notice-ink">
+          <strong>Not fully downloaded yet.</strong> Only the portal&apos;s list entry for this tender is in this release; its full
+          details will be added in a later update.
+        </div>
+      )}
+
       <div className="grid gap-3 sm:grid-cols-4">
         <Fact label={<Term k="estimate">Official estimate</Term>} value={inr(t.ecv)} sub="what the government expected it to cost" />
         <Fact label={<Term k="winning_bid">Winning price</Term>} value={inr(t.selection?.bid_value)} sub={ratio ? vsEstimate(ratio) : "no winner chosen yet"} />

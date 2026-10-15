@@ -63,6 +63,13 @@ export default function FindingsPage() {
           figure very likely falls in. The ranges narrow as more tenders are read.
         </div>
       )}
+      {(f.coverage.unavailable_calls ?? 0) > 0 && (
+        <p className="text-sm text-ink-2">
+          {num(f.coverage.unavailable_calls ?? 0)} tenders ({pct((f.coverage.unavailable_calls ?? 0) / f.coverage.listed_calls, 1)}) could not be
+          read in full: the government portal returned an error for them, including on later retries. They are left out of the
+          figures below. <Link href="/coverage/#unavailable">See which ones</Link>.
+        </p>
+      )}
 
       {/* The verdict */}
       <section className="card p-6 border-l-4 border-l-[var(--series-2)]">

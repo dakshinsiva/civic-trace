@@ -31,7 +31,14 @@ export function getBuyer(code: string): BuyerDoc {
 
 export type Stat = { k: number; n: number; share: number | null; ci95: [number, number] | null };
 export type Findings = {
-  coverage: { listed_calls: number; fetched_calls: number; fetched_share: number | null; sampling: string };
+  coverage: {
+    listed_calls: number;
+    fetched_calls: number;
+    fetched_share: number | null;
+    sampling: string;
+    unavailable_calls?: number;
+    pending_calls?: number;
+  };
   any_warning_sign: Stat;
   two_or_more_signs: Stat;
   single_bidder: Stat;
@@ -48,6 +55,28 @@ export type Findings = {
   selected_value: number;
   status_all_listed: { awarded: number; evaluation_completed_no_award: number; recalled: number; retendered: number; listed: number };
 };
+
+export type Unavailable = {
+  count: number;
+  listed: number;
+  by_buyer: Record<string, number>;
+  tenders: {
+    nit_id: number;
+    tender_number: string;
+    title: string;
+    buyer: string;
+    status: string;
+    published_at: string | null;
+    attempts: number | null;
+    last_tried: string | null;
+    error: string | null;
+  }[];
+};
+
+/** Tenders whose details the portal would not return, even after retries. */
+export function getUnavailable(): Unavailable | null {
+  return existsSync(path.join(DATA_DIR, "unavailable.json")) ? read<Unavailable>("unavailable.json") : null;
+}
 
 export function getFindings(): Findings | null {
   return existsSync(path.join(DATA_DIR, "findings.json")) ? read<Findings>("findings.json") : null;

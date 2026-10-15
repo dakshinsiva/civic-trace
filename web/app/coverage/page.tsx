@@ -1,5 +1,7 @@
+import Link from "next/link";
+
 import { PageTitle, Section } from "@/components/ui";
-import { getMeta } from "@/lib/data";
+import { getMeta, getUnavailable } from "@/lib/data";
 import { date, num, pct } from "@/lib/format";
 import { pageMetadata } from "@/lib/seo";
 
@@ -12,6 +14,7 @@ export const metadata = pageMetadata({
 
 export default function CoveragePage() {
   const meta = getMeta();
+  const unavailable = getUnavailable();
   const fields = meta.coverage[0] ? Object.entries(meta.coverage[0].fields).map(([k, v]) => [k, v.label] as const) : [];
   return (
     <div className="space-y-6">
@@ -54,7 +57,11 @@ export default function CoveragePage() {
                   <td className="num">{num(c.calls)}</td>
                   <td className="num">
                     {pct(c.details_fetched, 0)}
-                    {c.detail_unavailable > 0 && <div className="text-xs text-muted">{c.detail_unavailable} unavailable</div>}
+                    {c.detail_unavailable > 0 && (
+                      <a href="#unavailable" className="block text-xs text-muted">
+                        {c.detail_unavailable} unavailable
+                      </a>
+                    )}
                   </td>
                   <td className="text-xs whitespace-nowrap">
                     {date(c.first_published)} – {date(c.last_published)}
@@ -86,6 +93,62 @@ export default function CoveragePage() {
           <li>Withheld pending correction: {Object.values(meta.counts.suppressed).reduce((a, b) => a + b, 0)}</li>
         </ul>
       </Section>
+
+      {unavailable && unavailable.count > 0 && (
+        <Section id="unavailable" title={`Records the portal wouldn't give us (${num(unavailable.count)})`}>
+          <p className="text-sm text-ink">
+            For {num(unavailable.count)} of {num(unavailable.listed)} tenders ({pct(unavailable.count / unavailable.listed, 1)}), the
+            government portal returned an error every time we asked for the full record. Each was tried more than once, at
+            different times (the &ldquo;Attempts&rdquo; column), with three quick retries on every attempt. These tenders still appear in the tender list with what the portal&apos;s search
+            listing shows, but they are left out of every warning sign and finding that needs the missing details.
+          </p>
+          <p className="mt-2 text-sm text-ink-2">
+            This is a fault on the portal&apos;s side (it answers with a server error for these records), not a judgement about the
+            tenders. They will be tried again in future updates.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2 text-sm">
+            {Object.entries(unavailable.by_buyer)
+              .sort((a, b) => b[1] - a[1])
+              .map(([b, n]) => (
+                <span key={b} className="rounded-full border border-line px-2.5 py-1 tabular">
+                  {b}: {num(n)}
+                </span>
+              ))}
+          </div>
+          <details className="mt-4 text-sm">
+            <summary className="cursor-pointer text-ink-2">Show the {num(unavailable.count)} tenders</summary>
+            <div className="mt-2 max-h-[480px] overflow-auto">
+              <table className="data">
+                <thead>
+                  <tr>
+                    <th>Tender</th>
+                    <th>Department</th>
+                    <th>Published</th>
+                    <th className="num">Attempts</th>
+                    <th>Last tried</th>
+                    <th>What failed</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {unavailable.tenders.map((t) => (
+                    <tr key={t.nit_id}>
+                      <td className="max-w-md">
+                        <Link href={`/tender/?id=${t.nit_id}`}>{t.title || t.tender_number}</Link>
+                        <div className="text-xs text-muted tabular">{t.tender_number}</div>
+                      </td>
+                      <td>{t.buyer}</td>
+                      <td className="whitespace-nowrap">{date(t.published_at)}</td>
+                      <td className="num">{t.attempts ?? "—"}</td>
+                      <td className="whitespace-nowrap">{date(t.last_tried)}</td>
+                      <td className="text-xs text-ink-2">{t.error ?? "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </Section>
+      )}
 
       <Section title="Not covered (yet)">
         <ul className="list-disc pl-5 text-sm space-y-1">
