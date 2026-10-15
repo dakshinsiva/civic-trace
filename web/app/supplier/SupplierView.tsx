@@ -6,12 +6,12 @@ import { useSearchParams } from "next/navigation";
 import { ErrorNote, FlagList, Loading, PageTitle, Section, Stat } from "@/components/ui";
 import { inr, selectionLabel } from "@/lib/format";
 import type { Graph, SupplierDoc } from "@/lib/types";
-import { useJson } from "@/lib/useJson";
+import { useJson, useRecord } from "@/lib/useJson";
 
 export function SupplierView({ relationships }: { relationships: boolean }) {
   const id = useSearchParams().get("id");
   const safe = id && /^\d{1,9}$/.test(id) ? id : null;
-  const { data: s, error, loading } = useJson<SupplierDoc>(safe ? `suppliers/${safe}.json` : null);
+  const { data: s, error, loading } = useRecord<SupplierDoc>("suppliers", safe);
   if (loading) return <Loading what="supplier" />;
   if (error || !s) return <ErrorNote message={error ?? "Supplier not found."} />;
 

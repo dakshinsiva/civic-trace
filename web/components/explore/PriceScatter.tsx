@@ -8,7 +8,7 @@ import { useMemo, useRef, useState } from "react";
 
 import { BIDDER_COLORS, BIDDER_LABELS, bidderGroup, type Fact } from "@/lib/facts";
 import { inr } from "@/lib/format";
-import { useJson } from "@/lib/useJson";
+import { useRecord } from "@/lib/useJson";
 import type { TenderDoc } from "@/lib/types";
 
 const W = 760, H = 380, P = { l: 64, r: 16, t: 16, b: 44 };
@@ -153,7 +153,7 @@ export function PriceScatter({ rows }: { rows: Fact[] }) {
 }
 
 function ScatterTip({ p, left, top }: { p: { r: Fact; ratio: number; g: string }; left: number; top: number }) {
-  const { data } = useJson<TenderDoc>(`tenders/${p.r.nit}.json`);
+  const { data } = useRecord<TenderDoc>("tenders", String(p.r.nit));
   const diff = (p.ratio - 1) * 100;
   return (
     <div

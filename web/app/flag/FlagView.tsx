@@ -7,12 +7,12 @@ import { Histogram } from "@/components/charts/Histogram";
 import { ErrorNote, KV, Loading, PageTitle, RuleBadge, Section } from "@/components/ui";
 import { date, num, pct } from "@/lib/format";
 import type { Flag, RuleConfig } from "@/lib/types";
-import { useJson } from "@/lib/useJson";
+import { useRecord } from "@/lib/useJson";
 
 export function FlagView({ rules }: { rules: Record<string, RuleConfig> }) {
   const id = useSearchParams().get("id");
   const safe = id && /^[0-9a-f]{16}$/.test(id) ? id : null;
-  const { data: f, error, loading } = useJson<Flag>(safe ? `flags/${safe}.json` : null);
+  const { data: f, error, loading } = useRecord<Flag>("flags", safe);
   if (loading) return <Loading what="indicator" />;
   if (error || !f) return <ErrorNote message={error ?? "Indicator not found."} />;
   const rule = rules[f.rule_id];

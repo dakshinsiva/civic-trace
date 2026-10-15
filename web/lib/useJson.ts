@@ -36,3 +36,20 @@ export function useJson<T>(path: string | null): State<T> {
   if (!res) return { data: null, error: null, loading: true };
   return { data: res.data as T, error: res.error, loading: false };
 }
+
+// Per-record files are grouped into buckets by the exporter (pipeline/civictrace/export.py).
+const BUCKETS = { tenders: 256, suppliers: 64 } as const;
+
+export function recordPath(kind: "tenders" | "suppliers" | "flags", id: string): string {
+  if (kind === "flags") return `flags/b${id.slice(0, 2)}.json`;
+  return `${kind}/b${String(Number(id) % BUCKETS[kind]).padStart(3, "0")}.json`;
+}
+
+/** Load one tender, supplier or flag from its bucket file. */
+export function useRecord<T>(kind: "tenders" | "suppliers" | "flags", id: string | null): State<T> {
+  const st = useJson<Record<string, T>>(id ? recordPath(kind, id) : null);
+  if (!id) return { data: null, error: "No record specified.", loading: false };
+  if (st.loading || st.error) return { data: null, error: st.error, loading: st.loading };
+  const rec = st.data?.[id];
+  return rec ? { data: rec, error: null, loading: false } : { data: null, error: "Record not found in this data release.", loading: false };
+}

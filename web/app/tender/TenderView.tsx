@@ -7,12 +7,12 @@ import { Term } from "@/components/Term";
 import { ErrorNote, FlagList, Loading, PageTitle, Section } from "@/components/ui";
 import { date, datetime, inr, selectionLabel, statusLabel } from "@/lib/format";
 import type { TenderDoc } from "@/lib/types";
-import { useJson } from "@/lib/useJson";
+import { useRecord } from "@/lib/useJson";
 
 export function TenderView() {
   const id = useSearchParams().get("id");
   const safe = id && /^\d{1,9}$/.test(id) ? id : null;
-  const { data: t, error, loading } = useJson<TenderDoc>(safe ? `tenders/${safe}.json` : null);
+  const { data: t, error, loading } = useRecord<TenderDoc>("tenders", safe);
   if (loading) return <Loading what="tender" />;
   if (error || !t) return <ErrorNote message={error ?? "Tender not found."} />;
 

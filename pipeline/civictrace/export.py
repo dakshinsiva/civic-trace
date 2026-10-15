@@ -25,6 +25,23 @@ from .sources import kppp
 
 MARKER = ".civictrace-export"
 
+# Per-record JSON is grouped into buckets so a release stays a few hundred files
+# (hosting platforms cap files per deployment). The web app computes the same bucket.
+TENDER_BUCKETS = 256
+SUPPLIER_BUCKETS = 64
+
+
+def tender_bucket(nit: int) -> str:
+    return f"b{int(nit) % TENDER_BUCKETS:03d}"
+
+
+def supplier_bucket(sid: int) -> str:
+    return f"b{int(sid) % SUPPLIER_BUCKETS:03d}"
+
+
+def flag_bucket(flag_id: str) -> str:
+    return f"b{flag_id[:2]}"
+
 
 def _write(path: Path, obj) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -146,8 +163,11 @@ def export_all(conn: sqlite3.Connection, out: Path, include_relationships: bool 
             "partial_period": f["period"].get("partial", False),
         }
 
+    flag_buckets: dict[str, dict] = defaultdict(dict)
     for f in flags:
-        _write(out / "flags" / f"{f['flag_id']}.json", f)
+        flag_buckets[flag_bucket(f["flag_id"])][f["flag_id"]] = f
+    for b, recs in flag_buckets.items():
+        _write(out / "flags" / f"{b}.json", recs)
     _write(out / "flags-index.json", [flag_stub(f) for f in flags])
 
     # ------------------------------------------------------------ tenders
@@ -176,6 +196,7 @@ def export_all(conn: sqlite3.Connection, out: Path, include_relationships: bool 
         "n_price_stage_bidders", "n_corrigenda", "n_deadline_extensions",
     ]
     tender_index = []
+    tender_buckets: dict[str, dict] = defaultdict(dict)
     for _, row in calls.iterrows():
         nit = int(row["nit_id"])
         t = _rowdict(row, tender_cols)
@@ -233,7 +254,7 @@ def export_all(conn: sqlite3.Connection, out: Path, include_relationships: bool 
             "portal_url": kppp.PORTAL,
             "flags": [flag_stub(f) for f in flags_by_call.get(nit, [])],
         }
-        _write(out / "tenders" / f"{nit}.json", doc)
+        tender_buckets[tender_bucket(nit)][str(nit)] = doc
         tender_index.append(
             {
                 "nit_id": nit,
@@ -251,11 +272,14 @@ def export_all(conn: sqlite3.Connection, out: Path, include_relationships: bool 
                 "n_flags": len([f for f in flags_by_call.get(nit, []) if f["subject_type"] == "tender_call"]),
             }
         )
+    for b, recs in tender_buckets.items():
+        _write(out / "tenders" / f"{b}.json", recs)
     _write(out / "tenders-index.json", tender_index)
 
     # ------------------------------------------------------------ suppliers
     sel = calls[calls["has_selection"]]
     supplier_index = []
+    supplier_buckets: dict[str, dict] = defaultdict(dict)
     for sid, g in sel.groupby("supplier_id"):
         sid = int(sid)
         if sid in suppressed_suppliers:
@@ -294,8 +318,10 @@ def export_all(conn: sqlite3.Connection, out: Path, include_relationships: bool 
             ],
             "flags": [flag_stub(f) for f in flags_by_supplier.get(sid, [])],
         }
-        _write(out / "suppliers" / f"{sid}.json", doc)
+        supplier_buckets[supplier_bucket(sid)][str(sid)] = doc
         supplier_index.append({"supplier_id": sid, "name": doc["name"], "selections": doc["selections"]})
+    for b, recs in supplier_buckets.items():
+        _write(out / "suppliers" / f"{b}.json", recs)
     # Alphabetical (not ranked) — the site deliberately has no supplier leaderboard.
     supplier_index.sort(key=lambda s: (s["name"] or "").lower())
     _write(out / "suppliers-index.json", supplier_index)

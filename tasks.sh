@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # CivicTrace task runner (same targets as the Makefile, for machines without make).
-#   ./tasks.sh ingest | kla | status | rules | export | web | data | internal | test | check-public
+#   ./tasks.sh ingest | kla | status | rules | export | web | data | internal | test | check-public | deploy [prod]
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -22,6 +22,21 @@ check_public() {
   echo "public build OK: no relationship data"
 }
 
+deploy() {
+  # Static upload of the built site (web/out) to the linked Vercel project (.vercel/project.json).
+  # Vercel does not build anything: the data release only exists locally.
+  export_public; web; check_public
+  cp deploy/vercel.json web/out/vercel.json
+  local org proj
+  org=$(python3 -c "import json;print(json.load(open('.vercel/project.json'))['orgId'])")
+  proj=$(python3 -c "import json;print(json.load(open('.vercel/project.json'))['projectId'])")
+  if [ "${1:-}" = "prod" ]; then
+    VERCEL_ORG_ID="$org" VERCEL_PROJECT_ID="$proj" vercel deploy web/out --yes --prod
+  else
+    VERCEL_ORG_ID="$org" VERCEL_PROJECT_ID="$proj" vercel deploy web/out --yes
+  fi
+}
+
 case "${1:-}" in
   ingest) pipe civictrace ingest kppp ;;
   kla) pipe civictrace ingest kla ;;
@@ -41,5 +56,6 @@ case "${1:-}" in
     pipe civictrace claims validate
     (cd web && pnpm exec tsc --noEmit) ;;
   check-public) check_public ;;
+  deploy) deploy "${2:-}" ;;
   *) sed -n '2,3p' "$0"; exit 1 ;;
 esac
