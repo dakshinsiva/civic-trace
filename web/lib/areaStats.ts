@@ -95,8 +95,8 @@ export const METRICS: Metric[] = [
     question: "Where is spending highest per person?",
     kind: "volume",
     unit: "inr_pc",
-    minN: 5,
-    explain: "Sum of winning prices divided by the area's population (2011 census, as published with the 2025 ward map).",
+    minN: 15,
+    explain: "Sum of winning prices divided by the area's population (2011 census, as published with the 2025 ward map). Places with fewer than 15 contracts or 50,000 residents are not ranked, because a few large contracts in a small place give misleading per-person figures.",
   },
   {
     key: "tenders",
@@ -108,6 +108,9 @@ export const METRICS: Metric[] = [
     explain: "Tender calls placed in the area.",
   },
 ];
+
+/** Below this many residents, per-person spending is too volatile to rank. */
+const MIN_POP_PER_CAPITA = 50000;
 
 export type AreaStat = {
   id: string;
@@ -211,7 +214,7 @@ export function metricValue(s: AreaStat | undefined, metric: Metric, population?
     case "spend":
       return { value: s.spend || null, n: s.selections };
     case "per_capita":
-      return { value: population && s.selections >= metric.minN ? s.spend / population : null, n: s.selections };
+      return { value: population && population >= MIN_POP_PER_CAPITA && s.selections >= metric.minN ? s.spend / population : null, n: s.selections };
     case "tenders":
       return { value: s.tenders, n: s.tenders };
   }
