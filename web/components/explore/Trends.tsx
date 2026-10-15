@@ -32,32 +32,34 @@ export function MonthlyVolume({ rows }: { rows: Fact[] }) {
   const every = Math.ceil(data.length / 12);
   return (
     <div className="relative">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="Tenders published per month">
-        {ticks.map((t) => (
-          <g key={t}>
-            <line x1={P.l} x2={W - P.r} y1={y(t)} y2={y(t)} stroke="var(--grid)" />
-            <text x={P.l - 6} y={y(t) + 4} fontSize={11} textAnchor="end" fill="var(--muted)" className="tabular">
-              {t.toLocaleString("en-IN")}
-            </text>
-          </g>
-        ))}
-        {data.map((d, i) => {
-          const cx = x(d.month)! + x.bandwidth() / 2;
-          const isMarch = d.month.endsWith("-03");
-          return (
-            <g key={d.month} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}>
-              <rect x={x(d.month)} y={P.t} width={x.bandwidth()} height={H - P.t - P.b} fill="transparent" />
-              <BarPath x={cx - bw / 2} y={y(d.n)} w={bw} h={y(0) - y(d.n)} fill={isMarch ? "var(--series-2)" : "var(--series-1)"} opacity={hover === null || hover === i ? 1 : 0.55} />
-              {i % every === 0 && (
-                <text x={cx} y={H - 8} fontSize={10} textAnchor="middle" fill="var(--muted)">
-                  {monthLabel(d.month)}
-                </text>
-              )}
+      <div className="overflow-x-auto">
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto min-w-[34rem]" role="img" aria-label="Tenders published per month">
+          {ticks.map((t) => (
+            <g key={t}>
+              <line x1={P.l} x2={W - P.r} y1={y(t)} y2={y(t)} stroke="var(--grid)" />
+              <text x={P.l - 6} y={y(t) + 4} fontSize={11} textAnchor="end" fill="var(--muted)" className="tabular">
+                {t.toLocaleString("en-IN")}
+              </text>
             </g>
-          );
-        })}
-        <line x1={P.l} x2={W - P.r} y1={y(0)} y2={y(0)} stroke="var(--axis)" />
-      </svg>
+          ))}
+          {data.map((d, i) => {
+            const cx = x(d.month)! + x.bandwidth() / 2;
+            const isMarch = d.month.endsWith("-03");
+            return (
+              <g key={d.month} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}>
+                <rect x={x(d.month)} y={P.t} width={x.bandwidth()} height={H - P.t - P.b} fill="transparent" />
+                <BarPath x={cx - bw / 2} y={y(d.n)} w={bw} h={y(0) - y(d.n)} fill={isMarch ? "var(--series-2)" : "var(--series-1)"} opacity={hover === null || hover === i ? 1 : 0.55} />
+                {i % every === 0 && (
+                  <text x={cx} y={H - 8} fontSize={10} textAnchor="middle" fill="var(--muted)">
+                    {monthLabel(d.month)}
+                  </text>
+                )}
+              </g>
+            );
+          })}
+          <line x1={P.l} x2={W - P.r} y1={y(0)} y2={y(0)} stroke="var(--axis)" />
+        </svg>
+      </div>
       {hover !== null && (
         <div className="tooltip pointer-events-none absolute top-0 z-10 tabular" style={{ left: `${((x(data[hover].month)! + x.bandwidth() / 2) / W) * 100}%`, transform: "translateX(-50%)" }}>
           {monthLabel(data[hover].month)}: <strong>{data[hover].n.toLocaleString("en-IN")}</strong> tenders
@@ -96,28 +98,30 @@ export function SingleBidTrend({ rows }: { rows: Fact[] }) {
   const path = shown.map((d, i) => `${i ? "L" : "M"}${cx(d)},${y(d.rate)}`).join("");
   return (
     <div className="relative">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="Share of contracts with only one company competing, by quarter" onMouseLeave={() => setHover(null)}>
-        {y.ticks(4).map((t) => (
-          <g key={t}>
-            <line x1={P.l} x2={W - P.r} y1={y(t)} y2={y(t)} stroke="var(--grid)" />
-            <text x={P.l - 6} y={y(t) + 4} fontSize={11} textAnchor="end" fill="var(--muted)">
-              {Math.round(t * 100)}%
-            </text>
-          </g>
-        ))}
-        <path d={path} fill="none" stroke="var(--series-2)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
-        {shown.map((d, i) => (
-          <g key={d.q} onMouseEnter={() => setHover(i)}>
-            <rect x={x(d.q)} y={P.t} width={x.bandwidth()} height={H - P.t - P.b} fill="transparent" />
-            {hover === i && <line x1={cx(d)} x2={cx(d)} y1={P.t} y2={H - P.b} stroke="var(--ink-2)" strokeWidth={1} />}
-            <circle cx={cx(d)} cy={y(d.rate)} r={4} fill="var(--series-2)" stroke="var(--surface)" strokeWidth={2} />
-            <text x={cx(d)} y={H - 8} fontSize={10} textAnchor="middle" fill="var(--muted)">
-              {d.q.replace("-", " ")}
-            </text>
-          </g>
-        ))}
-        <line x1={P.l} x2={W - P.r} y1={y(0)} y2={y(0)} stroke="var(--axis)" />
-      </svg>
+      <div className="overflow-x-auto">
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto min-w-[34rem]" role="img" aria-label="Share of contracts with only one company competing, by quarter" onMouseLeave={() => setHover(null)}>
+          {y.ticks(4).map((t) => (
+            <g key={t}>
+              <line x1={P.l} x2={W - P.r} y1={y(t)} y2={y(t)} stroke="var(--grid)" />
+              <text x={P.l - 6} y={y(t) + 4} fontSize={11} textAnchor="end" fill="var(--muted)">
+                {Math.round(t * 100)}%
+              </text>
+            </g>
+          ))}
+          <path d={path} fill="none" stroke="var(--series-2)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+          {shown.map((d, i) => (
+            <g key={d.q} onMouseEnter={() => setHover(i)}>
+              <rect x={x(d.q)} y={P.t} width={x.bandwidth()} height={H - P.t - P.b} fill="transparent" />
+              {hover === i && <line x1={cx(d)} x2={cx(d)} y1={P.t} y2={H - P.b} stroke="var(--ink-2)" strokeWidth={1} />}
+              <circle cx={cx(d)} cy={y(d.rate)} r={4} fill="var(--series-2)" stroke="var(--surface)" strokeWidth={2} />
+              <text x={cx(d)} y={H - 8} fontSize={10} textAnchor="middle" fill="var(--muted)">
+                {d.q.replace("-", " ")}
+              </text>
+            </g>
+          ))}
+          <line x1={P.l} x2={W - P.r} y1={y(0)} y2={y(0)} stroke="var(--axis)" />
+        </svg>
+      </div>
       {hover !== null && (
         <div className="tooltip pointer-events-none absolute top-0 z-10 tabular" style={{ left: `${(cx(shown[hover]) / W) * 100}%`, transform: "translateX(-50%)" }}>
           {shown[hover].q.replace("-", " ")}: <strong>{Math.round(shown[hover].rate * 100)}%</strong> ({shown[hover].one} of {shown[hover].known} contracts)

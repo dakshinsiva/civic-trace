@@ -71,7 +71,7 @@ export function FlagsExplorer({ rules, buyers }: { rules: Overview["rules"]; buy
           <input
             defaultValue={q}
             onChange={(e) => set("q", e.target.value)}
-            placeholder="tender no., supplier, division"
+            placeholder="Tender no., contractor, office"
             className="field w-full sm:w-56"
           />
         </label>
@@ -79,7 +79,23 @@ export function FlagsExplorer({ rules, buyers }: { rules: Overview["rules"]; buy
       <p className="text-sm text-muted tabular">
         {rows.length.toLocaleString("en-IN")} of {(data ?? []).length.toLocaleString("en-IN")} warning signs
       </p>
-      <div className="overflow-x-auto card">
+      {/* Phones: one card per warning sign. Wider screens: the table. */}
+      <ul className="space-y-2 sm:hidden">
+        {shown.map((f) => (
+          <li key={f.flag_id} className="card p-4">
+            <RuleBadge n={f.rule_number} name={f.rule_plain_name} />
+            <Link href={`/flag/?id=${f.flag_id}`} className="mt-2 block text-body-m">
+              {f.headline}
+            </Link>
+            {f.title && <div className="mt-1 line-clamp-2 text-body-s text-ink-2">{f.title}</div>}
+            <div className="mt-1.5 text-body-s text-muted">
+              {[f.buyer, f.work_category, f.fiscal_year ? `FY ${f.fiscal_year}` : null, f.ecv ? `estimate ${inr(f.ecv)}` : null].filter(Boolean).join(" · ")}
+              {f.partial_period && " · partial year"}
+            </div>
+          </li>
+        ))}
+      </ul>
+      <div className="hidden overflow-x-auto card sm:block">
         <table className="data">
           <thead>
             <tr>

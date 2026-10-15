@@ -28,22 +28,22 @@ export default async function BuyerPage({ params }: { params: Promise<{ code: st
 
   return (
     <div className="space-y-6">
-      <PageTitle eyebrow="Buyer" title={`${b.name} (${b.code})`}>
+      <PageTitle eyebrow="Department" title={`${b.name} (${b.code})`}>
         {info?.note && <p className="text-sm">{info.note}</p>}
       </PageTitle>
 
       <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
-        <Stat label="Tender calls" value={num(b.totals.calls)} sub={`${num(b.totals.processes)} distinct works`} />
-        <Stat label="Selections" value={num(b.totals.selections)} />
-        <Stat label="Distinct suppliers" value={num(b.totals.suppliers)} />
+        <Stat label="Tenders" value={num(b.totals.calls)} sub={`${num(b.totals.processes)} distinct works`} />
+        <Stat label="Winners chosen" value={num(b.totals.selections)} />
+        <Stat label="Contractors" value={num(b.totals.suppliers)} />
         <Stat
-          label="Indicators"
+          label="Warning signs"
           value={num(Object.values(b.flags_by_rule).reduce((a, c) => a + c, 0))}
           sub={<Link href={`/flags/?buyer=${b.code}`}>view all</Link>}
         />
       </div>
 
-      <Section title="Indicators by rule">
+      <Section title="Warning signs found">
         <ul className="text-sm space-y-1">
           {Object.entries(rules)
             .filter(([, r]) => r.enabled)
@@ -58,17 +58,17 @@ export default async function BuyerPage({ params }: { params: Promise<{ code: st
       </Section>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Section title="Single bidder at price stage, by year">
+        <Section title="Only one company competed, by year">
           {sb.length ? (
-            <RateBars rows={sb} title="Share of open-tender selections with one price-stage bidder" valueLabel="Fiscal year of award (or of bid close if no award is recorded)." />
+            <RateBars rows={sb} title="Share of open contracts where only one company reached the price round" valueLabel="Financial year of the award (or of the bid deadline if no award is recorded)." />
           ) : (
-            <p className="text-sm text-muted">No selections with known bidder counts yet.</p>
+            <p className="text-sm text-muted">No contracts with a published bidder count yet.</p>
           )}
         </Section>
-        <Section title="Submission windows">
+        <Section title="Time given to bid">
           {b.window_distribution ? (
             <Histogram
-              title="Days from publication to original deadline"
+              title="Days from publication to the original deadline"
               counts={b.window_distribution.counts}
               edges={b.window_distribution.edges}
               xLabel="days"
@@ -82,9 +82,9 @@ export default async function BuyerPage({ params }: { params: Promise<{ code: st
       </div>
 
       {b.ratio_distribution && (
-        <Section title="Selected bid vs estimate">
+        <Section title="Winning price vs the official estimate">
           <Histogram
-            title="Selected bid ÷ estimated contract value"
+            title="Winning price ÷ official estimate"
             counts={b.ratio_distribution.counts}
             edges={b.ratio_distribution.edges}
             log
@@ -95,20 +95,20 @@ export default async function BuyerPage({ params }: { params: Promise<{ code: st
         </Section>
       )}
 
-      <Section title="By fiscal year (of publication)">
+      <Section title="By financial year (published)">
         <div className="overflow-x-auto">
           <table className="data">
             <thead>
               <tr>
                 <th>FY</th>
-                <th className="num">Calls</th>
+                <th className="num">Tenders</th>
                 {statuses.map((s) => (
                   <th key={s} className="num">
                     {statusLabel(s)}
                   </th>
                 ))}
-                <th className="num">Median bidders</th>
-                <th className="num">Selected value</th>
+                <th className="num">Typical no. of bidders</th>
+                <th className="num">Value of winning bids</th>
               </tr>
             </thead>
             <tbody>
@@ -130,15 +130,15 @@ export default async function BuyerPage({ params }: { params: Promise<{ code: st
         </div>
       </Section>
 
-      <Section title="Divisions">
+      <Section title="Local offices (divisions)">
         <div className="overflow-x-auto">
           <table className="data">
             <thead>
               <tr>
-                <th>Division / location</th>
-                <th className="num">Calls</th>
-                <th className="num">Selections</th>
-                <th className="num">Distinct suppliers</th>
+                <th>Local office</th>
+                <th className="num">Tenders</th>
+                <th className="num">Winners chosen</th>
+                <th className="num">Contractors</th>
               </tr>
             </thead>
             <tbody>

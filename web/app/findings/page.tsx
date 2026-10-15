@@ -41,7 +41,7 @@ export default function FindingsPage() {
 
   return (
     <div className="space-y-10">
-      <PageTitle eyebrow="Findings · updated with every data release" title="How rampant is corruption in Bengaluru's tenders?">
+      <PageTitle eyebrow="Findings · updated with every data release" title="How common are the warning signs in Bengaluru's tenders?">
         <p className="text-lg">
           No public record can tell us how much corruption there is. What records <em>can</em> show is how often the patterns
           investigators associate with it appear. Here is what {num(f.coverage.fetched_calls)} tenders read in full show
@@ -224,32 +224,34 @@ function CompetitionBars({ rows }: { rows: { label: string; v: number | null; n:
   const mid = P.l + (W - P.l - P.r) / 2;
   const scale = (W - P.l - P.r) / 2 / max;
   return (
-    <svg viewBox={`0 0 ${W} ${rows.length * row + 30}`} className="mt-3 w-full max-w-3xl h-auto" role="img" aria-label="Typical winning price versus estimate by number of competing companies">
-      <line x1={mid} x2={mid} y1={0} y2={rows.length * row} stroke="var(--ink-2)" strokeWidth={1.5} />
-      <text x={mid - 8} y={rows.length * row + 18} textAnchor="end" fontSize={11} fill="var(--muted)">
-        ← cheaper than the estimate
-      </text>
-      <text x={mid + 8} y={rows.length * row + 18} fontSize={11} fill="var(--muted)">
-        dearer than the estimate →
-      </text>
-      {rows.map((r, i) => {
-        const v = r.v ?? 0;
-        const w = Math.max(2, Math.abs(v) * scale);
-        const x = v < 0 ? mid - w : mid;
-        const y = i * row + 8;
-        return (
-          <g key={r.label}>
-            <text x={P.l - 10} y={y + 17} textAnchor="end" fontSize={13} fill="var(--ink)">
-              {r.label}
-            </text>
-            <rect x={x} y={y} width={w} height={24} rx={4} fill={r.color} />
-            {/* Values for bars that run left sit on the free side of the zero line, clear of the row labels. */}
-            <text x={v < 0 ? mid + 6 : x + w + 6} y={y + 17} fontSize={12} fill="var(--ink)" className="tabular">
-              {r.v == null ? "—" : `${r.v > 0 ? "+" : ""}${r.v.toFixed(1)}%`} <tspan fill="var(--muted)">(n={r.n})</tspan>
-            </text>
-          </g>
-        );
-      })}
-    </svg>
+    <div className="mt-3 overflow-x-auto">
+      <svg viewBox={`0 0 ${W} ${rows.length * row + 30}`} className="w-full max-w-3xl h-auto min-w-[34rem]" role="img" aria-label="Typical winning price versus estimate by number of competing companies">
+        <line x1={mid} x2={mid} y1={0} y2={rows.length * row} stroke="var(--ink-2)" strokeWidth={1.5} />
+        <text x={mid - 8} y={rows.length * row + 18} textAnchor="end" fontSize={11} fill="var(--muted)">
+          ← cheaper than the estimate
+        </text>
+        <text x={mid + 8} y={rows.length * row + 18} fontSize={11} fill="var(--muted)">
+          dearer than the estimate →
+        </text>
+        {rows.map((r, i) => {
+          const v = r.v ?? 0;
+          const w = Math.max(2, Math.abs(v) * scale);
+          const x = v < 0 ? mid - w : mid;
+          const y = i * row + 8;
+          return (
+            <g key={r.label}>
+              <text x={P.l - 10} y={y + 17} textAnchor="end" fontSize={13} fill="var(--ink)">
+                {r.label}
+              </text>
+              <rect x={x} y={y} width={w} height={24} rx={4} fill={r.color} />
+              {/* Values for bars that run left sit on the free side of the zero line, clear of the row labels. */}
+              <text x={v < 0 ? mid + 6 : x + w + 6} y={y + 17} fontSize={12} fill="var(--ink)" className="tabular">
+                {r.v == null ? "—" : `${r.v > 0 ? "+" : ""}${r.v.toFixed(1)}%`} <tspan fill="var(--muted)">(n={r.n})</tspan>
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+    </div>
   );
 }

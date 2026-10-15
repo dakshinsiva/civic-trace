@@ -2,9 +2,13 @@
 
 import "maplibre-gl/dist/maplibre-gl.css";
 
-import type { GeoJSONSource, Map as MLMap, MapGeoJSONFeature } from "maplibre-gl";
+import type { GeoJSONSource, Map as MLMap, MapGeoJSONFeature, MapMouseEvent } from "maplibre-gl";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+
+import { ContractCard } from "@/components/ContractCard";
+import { Icon } from "@/components/Icon";
 
 import { computeStats, describe, METRICS, metricValue, type AreaStat, type MetricKey } from "@/lib/areaStats";
 import type { Fact } from "@/lib/facts";
@@ -14,7 +18,8 @@ type FC = { type: "FeatureCollection"; attribution?: string; features: { type: "
 export type Level = "areas" | "wards";
 
 const CENTER: [number, number] = [77.59, 12.97];
-const ACCENT = "#2a78d6";
+// Outlines and hover use the site accent (--accent), per theme.
+const accent = (dark: boolean) => (dark ? "#4fd9f2" : "#087a92");
 const FOOTPRINT = "#eb6834";
 const DOT_COLORS: Record<string, string> = { "1": "#eb6834", "2": "#2a78d6", "3+": "#1baf7a", unknown: "#9a9890" };
 
@@ -39,6 +44,7 @@ export function CityMap({
   resetCmd = 0,
   fitKey = "",
   fitIds = null,
+  names = {},
 }: {
   rows: Fact[];
   metricKey: MetricKey;
@@ -54,18 +60,24 @@ export function CityMap({
   /** When this key changes, zoom to fit these area numbers (empty key: whole city). */
   fitKey?: string;
   fitIds?: string[] | null;
+  /** Supplier id → name, for the contract card. */
+  names?: Record<string, string>;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MLMap | null>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const [tip, setTip] = useState<{ x: number; y: number; w: number; title: string; text: string } | null>(null);
+  // The contract under the pointer (or tapped, on touch screens, where it stays until closed).
+  const [dot, setDot] = useState<{ nit: number; x: number; y: number; w: number; h: number; pinned: boolean } | null>(null);
+  const darkRef = useRef(false);
   const router = useRouter();
   const { data: areaGeo } = useJson<FC>("geo/areas.geojson");
   const { data: wardGeo } = useJson<FC>("geo/wards.geojson");
   const { data: corpGeo } = useJson<FC>("geo/corporations.geojson");
   const metric = METRICS.find((m) => m.key === metricKey)!;
 
+  const byNit = useMemo(() => new Map(rows.map((r) => [r.nit, r])), [rows]);
   const areaStats = useMemo(() => computeStats(rows, (r) => (r.area == null ? null : String(r.area))), [rows]);
   const wardStats = useMemo(() => computeStats(rows, (r) => r.ward), [rows]);
   const pop = useMemo(() => {
@@ -96,6 +108,7 @@ export function CityMap({
     if (!ref.current || mapRef.current) return;
     let cancelled = false;
     const dark = window.matchMedia?.("(prefers-color-scheme: dark)").matches && document.documentElement.dataset.theme !== "light";
+    darkRef.current = dark;
     import("maplibre-gl").then(({ default: maplibregl }) => {
       if (cancelled || !ref.current) return;
       let map: MLMap;
@@ -142,7 +155,9 @@ export function CityMap({
       type: "geojson",
       data: { type: "FeatureCollection", features: areaGeo.features.map((f) => ({ type: "Feature", properties: { name: f.properties.name }, geometry: { type: "Point", coordinates: [f.properties.cx, f.properties.cy] } })) } as never,
     });
-    map.addSource("dots", { type: "geojson", data: { type: "FeatureCollection", features: [] } as never });
+    map.addSource("dots", { type: "geojson", data: { type: "FeatureCollection", features: [] } as never, promoteId: "nit" });
+    const dark = darkRef.current;
+    const ACCENT = accent(dark);
 
     for (const lvl of ["areas", "wards"] as const) {
       map.addLayer({ id: `${lvl}-fill`, type: "fill", source: lvl, paint: { "fill-color": ACCENT, "fill-opacity": 0.02 } }, firstSymbol);
@@ -152,33 +167,45 @@ export function CityMap({
           type: "line",
           source: lvl,
           paint: {
-            "line-color": ["case", ["boolean", ["feature-state", "selected"], false], FOOTPRINT, ["boolean", ["feature-state", "hover"], false], ACCENT, "#5598e7"],
+            "line-color": ["case", ["boolean", ["feature-state", "selected"], false], FOOTPRINT, ACCENT],
             "line-width": ["case", ["boolean", ["feature-state", "selected"], false], 3, ["boolean", ["feature-state", "hover"], false], 2.4, lvl === "areas" ? 1.5 : 0.7],
-            "line-opacity": ["case", ["boolean", ["feature-state", "selected"], false], 1, ["boolean", ["feature-state", "hover"], false], 1, 0.7],
+            "line-opacity": ["case", ["boolean", ["feature-state", "selected"], false], 1, ["boolean", ["feature-state", "hover"], false], 1, lvl === "areas" ? 0.6 : 0.4],
           },
         },
         firstSymbol,
       );
     }
-    if (corpGeo) map.addLayer({ id: "corps-line", type: "line", source: "corps", paint: { "line-color": "#0b0b0b", "line-width": 1.6, "line-dasharray": [3, 2], "line-opacity": 0.55 } });
+    if (corpGeo) map.addLayer({ id: "corps-line", type: "line", source: "corps", paint: { "line-color": dark ? "#ededef" : "#0b0b0b", "line-width": 1.6, "line-dasharray": [3, 2], "line-opacity": 0.55 } });
     map.addLayer({
       id: "area-labels",
       type: "symbol",
       source: "area-labels",
       layout: { "text-field": ["get", "name"], "text-font": ["Noto Sans Bold"], "text-size": ["interpolate", ["linear"], ["zoom"], 9, 9, 12, 13], "text-allow-overlap": false },
-      paint: { "text-color": "#1f1f1e", "text-halo-color": "rgba(255,255,255,0.85)", "text-halo-width": 1.4 },
+      paint: dark
+        ? { "text-color": "#ededef", "text-halo-color": "rgba(7,8,10,0.85)", "text-halo-width": 1.4 }
+        : { "text-color": "#1f1f1e", "text-halo-color": "rgba(255,255,255,0.85)", "text-halo-width": 1.4 },
     });
     map.addLayer({
       id: "dots",
       type: "circle",
       source: "dots",
-      layout: { visibility: "none" },
+      // Small dots draw on top of big ones so nothing hides.
+      layout: { visibility: "none", "circle-sort-key": ["-", 0, ["get", "r"]] },
       paint: {
-        "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 2.5, 14, 6],
+        // Size grows with the winning price (log scale, see the legend); the hovered dot grows and gets a ring.
+        "circle-radius": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          10,
+          ["+", ["*", ["get", "r"], 0.7], ["case", ["boolean", ["feature-state", "hover"], false], 2.5, 0]],
+          14,
+          ["+", ["*", ["get", "r"], 1.6], ["case", ["boolean", ["feature-state", "hover"], false], 4, 0]],
+        ],
         "circle-color": ["match", ["get", "g"], "1", DOT_COLORS["1"], "2", DOT_COLORS["2"], "3+", DOT_COLORS["3+"], DOT_COLORS.unknown],
-        "circle-stroke-color": "#ffffff",
-        "circle-stroke-width": 1,
-        "circle-opacity": 0.9,
+        "circle-stroke-color": ["case", ["boolean", ["feature-state", "hover"], false], dark ? "#ffffff" : "#0a0b0d", dark ? "rgba(7,8,10,0.8)" : "#ffffff"],
+        "circle-stroke-width": ["case", ["boolean", ["feature-state", "hover"], false], 2.5, 1],
+        "circle-opacity": 0.92,
       },
     });
 
@@ -189,11 +216,13 @@ export function CityMap({
       hovered = id == null ? null : { src, id };
       if (hovered) map.setFeatureState({ source: hovered.src, id: hovered.id }, { hover: true });
     };
+    // Dots sit above the areas: while the pointer is on a dot, the area under it neither shows its summary nor selects.
+    const dotAt = (e: MapMouseEvent) => map.getLayoutProperty("dots", "visibility") === "visible" && map.queryRenderedFeatures(e.point, { layers: ["dots"] }).length > 0;
     for (const lvl of ["areas", "wards"] as const) {
       for (const layer of [`${lvl}-fill`]) {
         map.on("mousemove", layer, (e) => {
           const f = e.features?.[0] as MapGeoJSONFeature | undefined;
-          if (!f) return;
+          if (!f || dotAt(e)) return;
           map.getCanvas().style.cursor = "pointer";
           setHover(lvl, f.id as string | number);
           window.dispatchEvent(new CustomEvent("civictrace:hover", { detail: { lvl, id: String(f.id), x: e.point.x, y: e.point.y, props: f.properties } }));
@@ -205,16 +234,31 @@ export function CityMap({
         });
         map.on("click", layer, (e) => {
           const f = e.features?.[0];
-          if (f) window.dispatchEvent(new CustomEvent("civictrace:select", { detail: { level: lvl, id: String(f.id) } }));
+          if (f && !dotAt(e)) window.dispatchEvent(new CustomEvent("civictrace:select", { detail: { level: lvl, id: String(f.id) } }));
         });
       }
     }
+    const canvasSize = () => ({ w: map.getCanvas().clientWidth, h: map.getCanvas().clientHeight });
+    map.on("mousemove", "dots", (e) => {
+      const f = e.features?.[0];
+      if (!f) return;
+      map.getCanvas().style.cursor = "pointer";
+      setHover("dots", f.id as number);
+      window.dispatchEvent(new CustomEvent("civictrace:hover", { detail: null }));
+      window.dispatchEvent(new CustomEvent("civictrace:dot", { detail: { nit: Number(f.properties?.nit), x: e.point.x, y: e.point.y, ...canvasSize(), pinned: false } }));
+    });
+    map.on("mouseleave", "dots", () => {
+      map.getCanvas().style.cursor = "";
+      setHover("dots", null);
+      window.dispatchEvent(new CustomEvent("civictrace:dot", { detail: null }));
+    });
+    // With a mouse, a click opens the record. On a touch screen there is no hover, so a tap pins the card instead.
     map.on("click", "dots", (e) => {
       const f = e.features?.[0];
-      if (f) window.dispatchEvent(new CustomEvent("civictrace:open", { detail: f.properties?.nit }));
+      if (!f) return;
+      if (window.matchMedia("(hover: hover)").matches) window.dispatchEvent(new CustomEvent("civictrace:open", { detail: f.properties?.nit }));
+      else window.dispatchEvent(new CustomEvent("civictrace:dot", { detail: { nit: Number(f.properties?.nit), x: e.point.x, y: e.point.y, ...canvasSize(), pinned: true } }));
     });
-    map.on("mouseenter", "dots", () => (map.getCanvas().style.cursor = "pointer"));
-    map.on("mouseleave", "dots", () => (map.getCanvas().style.cursor = ""));
   }, [ready, areaGeo, wardGeo, corpGeo]);
 
   // ---- events from map → React (keeps handlers above stable)
@@ -225,13 +269,20 @@ export function CityMap({
       const v = values.get(d.id);
       setTip({ x: d.x, y: d.y, w: ref.current?.clientWidth ?? 600, title: String(d.props.name), text: describe(metric, v?.value ?? null, v?.n ?? 0) });
     };
+    const onDot = (e: Event) => {
+      const d = (e as CustomEvent).detail;
+      // A pinned card (touch) stays until closed or another dot is tapped; hover-leave does not clear it.
+      setDot((cur) => (d ? d : cur?.pinned ? cur : null));
+    };
     const onSel = (e: Event) => onSelect((e as CustomEvent).detail);
     const onOpen = (e: Event) => router.push(`/tender/?id=${(e as CustomEvent).detail}`);
     window.addEventListener("civictrace:hover", onHover);
+    window.addEventListener("civictrace:dot", onDot);
     window.addEventListener("civictrace:select", onSel);
     window.addEventListener("civictrace:open", onOpen);
     return () => {
       window.removeEventListener("civictrace:hover", onHover);
+      window.removeEventListener("civictrace:dot", onDot);
       window.removeEventListener("civictrace:select", onSel);
       window.removeEventListener("civictrace:open", onOpen);
     };
@@ -243,6 +294,7 @@ export function CityMap({
     const map = mapRef.current;
     if (!ready || !map || !map.getLayer("areas-fill")) return;
     const lit = highlight && highlight.size ? [...highlight] : null;
+    const ACCENT = accent(darkRef.current);
     const color = (lit ? ["match", ["to-string", ["id"]], lit, FOOTPRINT, ACCENT] : ACCENT) as never;
     const opacity = [
       "case",
@@ -318,7 +370,9 @@ export function CityMap({
       const ang = ((h % 3600) / 3600) * Math.PI * 2;
       const rad = 0.0006 + ((h >>> 12) % 1000) / 1000 * 0.0028;
       const g = r.bidders == null ? "unknown" : r.bidders <= 1 ? "1" : r.bidders === 2 ? "2" : "3+";
-      feats.push({ type: "Feature", properties: { nit: r.nit, g }, geometry: { type: "Point", coordinates: [c[0] + Math.cos(ang) * rad, c[1] + Math.sin(ang) * rad] } });
+      // Base radius from the winning price: ₹1 lakh → 2, ₹1 crore → 5, ₹100 crore → 8 (log scale).
+      const size = r.bid ? Math.min(8, 2 + 1.5 * Math.log10(Math.max(1, r.bid / 1e5))) : 2;
+      feats.push({ type: "Feature", properties: { nit: r.nit, g, r: size }, geometry: { type: "Point", coordinates: [c[0] + Math.cos(ang) * rad, c[1] + Math.sin(ang) * rad] } });
     }
     (map.getSource("dots") as GeoJSONSource).setData({ type: "FeatureCollection", features: feats } as never);
     map.setLayoutProperty("dots", "visibility", showDots ? "visible" : "none");
@@ -350,6 +404,38 @@ export function CityMap({
             Your browser couldn&apos;t start the interactive map (it needs WebGL). Everything else on this page still works: the
             ranking beside the map, the search box and all the charts below. Reloading the page or trying another browser usually fixes it.
           </p>
+        </div>
+      )}
+      {dot && byNit.get(dot.nit) && (
+        <div
+          className={`tooltip absolute z-20 p-4 ${dot.pinned ? "" : "pointer-events-none"}`}
+          style={{
+            left: Math.max(8, Math.min(dot.x + 16, dot.w - 336)),
+            top: dot.y > dot.h / 2 ? Math.max(8, dot.y - 16) : dot.y + 16,
+            transform: dot.y > dot.h / 2 ? "translateY(-100%)" : undefined,
+          }}
+          role={dot.pinned ? "dialog" : "tooltip"}
+          aria-label="Contract overview"
+        >
+          <ContractCard
+            fact={byNit.get(dot.nit)!}
+            supplierName={names[String(byNit.get(dot.nit)!.supplier)]}
+            footer={
+              dot.pinned ? (
+                <div className="mt-3 flex items-center gap-2">
+                  <Link href={`/tender/?id=${dot.nit}`} className="btn-primary h-9 flex-1">
+                    Open full record
+                    <Icon name="arrow-right" size={16} />
+                  </Link>
+                  <button type="button" className="icon-btn" aria-label="Close" onClick={() => setDot(null)}>
+                    <Icon name="x" size={18} />
+                  </button>
+                </div>
+              ) : (
+                <p className="label-mono mt-3 text-accent">Click the dot to open the full record</p>
+              )
+            }
+          />
         </div>
       )}
       {tip && (

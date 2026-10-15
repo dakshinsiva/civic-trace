@@ -11,7 +11,8 @@ export function inr(v: number | null | undefined, opts: { compact?: boolean } = 
 }
 
 function trim(n: number): string {
-  return n >= 100 ? n.toFixed(0) : n >= 10 ? n.toFixed(1) : n.toFixed(2);
+  // Indian digit grouping for big crore figures: ₹6,910 cr, not ₹6910 cr.
+  return n >= 100 ? Math.round(n).toLocaleString("en-IN") : n >= 10 ? n.toFixed(1) : n.toFixed(2);
 }
 
 export function num(v: number | null | undefined, digits = 0): string {

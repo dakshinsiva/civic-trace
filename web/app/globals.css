@@ -322,6 +322,26 @@
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
   }
+  /* A selected control over the map stays opaque, so map labels and dots don't show through its text. */
+  .on-map[aria-checked="true"],
+  .on-map[aria-pressed="true"] {
+    background-color: color-mix(in srgb, var(--accent) 16%, var(--page));
+  }
+  /* Bigger touch targets where there is no mouse */
+  @media (pointer: coarse) {
+    .chip,
+    .segmented,
+    .icon-btn {
+      min-height: 2.5rem;
+    }
+    .icon-btn {
+      min-width: 2.5rem;
+    }
+    .maplibregl-ctrl-group button {
+      width: 38px !important;
+      height: 38px !important;
+    }
+  }
 
   .segmented {
     @apply inline-flex h-9 items-center gap-0.5 rounded-full border border-line p-0.5;

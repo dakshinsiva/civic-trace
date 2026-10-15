@@ -33,13 +33,13 @@ export default function Home() {
         <p className="label-mono flex flex-wrap items-center gap-x-3 gap-y-1 text-muted">
           <span className="flex items-center gap-2 text-accent">
             <span className="live-dot" aria-hidden />
-            Live public records
+            Public records
           </span>
           <span>{num(meta.counts.calls)} tenders</span>
           <span className="hidden sm:inline">
             {date(meta.published_range[0])} → {date(meta.published_range[1])}
           </span>
-          <span className="hidden md:inline">Release {meta.data_version}</span>
+          <span className="hidden md:inline">Updated {date(meta.as_of)}</span>
         </p>
         <h1 className="mt-5 max-w-3xl text-headline-l text-ink text-balance sm:text-display-s">
           Who gets Bengaluru&apos;s public works contracts, and what looks unusual?

@@ -8,7 +8,7 @@ import { SupplierView } from "./SupplierView";
 
 // Many contractors are sole proprietors whose firm name is a person's name:
 // keep supplier pages out of search engines.
-export const metadata: Metadata = { title: "Supplier", robots: { index: false, follow: true } };
+export const metadata: Metadata = { title: "Contractor", robots: { index: false, follow: true } };
 
 export default function SupplierPage() {
   return (

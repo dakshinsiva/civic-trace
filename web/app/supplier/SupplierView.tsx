@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { ErrorNote, FlagList, Loading, PageTitle, Section, Stat } from "@/components/ui";
@@ -12,12 +13,16 @@ export function SupplierView({ relationships }: { relationships: boolean }) {
   const id = useSearchParams().get("id");
   const safe = id && /^\d{1,9}$/.test(id) ? id : null;
   const { data: s, error, loading } = useRecord<SupplierDoc>("suppliers", safe);
+  // The page shell is static, so name the browser tab after the record once it loads.
+  useEffect(() => {
+    if (s) document.title = `${s.name} · CivicTrace Bengaluru`;
+  }, [s]);
   if (loading) return <Loading what="supplier" />;
   if (error || !s) return <ErrorNote message={error ?? "Supplier not found."} />;
 
   return (
     <div className="space-y-5">
-      <PageTitle eyebrow={`KPPP supplier ID ${s.supplier_id}`} title={s.name}>
+      <PageTitle eyebrow={`Contractor · KPPP supplier ID ${s.supplier_id}`} title={s.name}>
         <p className="text-sm">
           Selections recorded on the Karnataka Public Procurement Portal for the Bengaluru buyers covered here. Winning
           tenders is what contractors do; a long list here is not, by itself, a sign of anything improper.
@@ -26,27 +31,27 @@ export function SupplierView({ relationships }: { relationships: boolean }) {
       </PageTitle>
 
       <div className="grid gap-3 sm:grid-cols-4">
-        <Stat label="Selections" value={s.selections.toLocaleString("en-IN")} />
+        <Stat label="Contracts won" value={s.selections.toLocaleString("en-IN")} />
         <Stat label="Awarded" value={s.awarded.toLocaleString("en-IN")} />
-        <Stat label="Selected, no award recorded" value={s.selected_no_award.toLocaleString("en-IN")} />
-        <Stat label="Sum of selected bids" value={inr(s.total_bid_value)} />
+        <Stat label="Won, no award recorded yet" value={s.selected_no_award.toLocaleString("en-IN")} />
+        <Stat label="Total of winning bids" value={inr(s.total_bid_value)} />
       </div>
 
-      <Section title="Risk indicators involving this supplier">
-        <FlagList flags={s.flags} empty="No risk indicators involve this supplier's selections." />
+      <Section title="Warning signs involving this contractor">
+        <FlagList flags={s.flags} empty="No warning signs involve this contractor's contracts." />
       </Section>
 
       {relationships && <Connections supplierId={s.supplier_id} />}
 
-      <Section title="By buyer and fiscal year">
+      <Section title="By department and financial year">
         <div className="overflow-x-auto">
           <table className="data">
             <thead>
               <tr>
-                <th>Buyer</th>
-                <th>Fiscal year</th>
-                <th className="num">Selections</th>
-                <th className="num">Selected bid value</th>
+                <th>Department</th>
+                <th>Financial year</th>
+                <th className="num">Contracts won</th>
+                <th className="num">Winning bids</th>
               </tr>
             </thead>
             <tbody>
@@ -71,11 +76,11 @@ export function SupplierView({ relationships }: { relationships: boolean }) {
             <thead>
               <tr>
                 <th>Tender</th>
-                <th>Buyer · division</th>
+                <th>Department · office</th>
                 <th>FY</th>
                 <th className="num">Estimate</th>
-                <th className="num">Bid</th>
-                <th className="num">Bidders</th>
+                <th className="num">Winning price</th>
+                <th className="num">Companies bid</th>
                 <th>Status</th>
               </tr>
             </thead>

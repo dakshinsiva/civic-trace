@@ -14,9 +14,11 @@ import "./globals.css";
 export const metadata: Metadata = {
   // Absolute base for the share image and other URL metadata (the site is built locally, not on Vercel).
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://civictrace-bengaluru.vercel.app"),
-  title: { default: "CivicTrace · Bengaluru procurement risk indicators", template: "%s · CivicTrace" },
+  title: { default: "CivicTrace Bengaluru · Who gets the city's public works contracts", template: "%s · CivicTrace Bengaluru" },
   description:
-    "Open-source, evidence-backed procurement risk indicators for Bengaluru's municipal tenders, built from the Karnataka Public Procurement Portal. Indicators are not findings of wrongdoing.",
+    "See who gets the public works contracts in your area of Bengaluru: tenders, winning bids and warning signs, from the Karnataka government's public procurement records. Open source. Warning signs are not proof.",
+  openGraph: { siteName: "CivicTrace Bengaluru", type: "website", locale: "en_IN" },
+  twitter: { card: "summary_large_image" },
 };
 
 // Geist and Geist Mono, self-hosted at build time (no request to Google from visitors' browsers).
@@ -24,6 +26,12 @@ const geist = Geist({ subsets: ["latin"], variable: "--font-geist", display: "sw
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono", display: "swap" });
 
 const REPO = "https://github.com/dakshinsiva/civic-trace";
+const AUTHOR = {
+  name: "Dakshin Raj Siva",
+  email: "dakshinrajsiva@gmail.com",
+  linkedin: "https://www.linkedin.com/in/dakshinsiva/",
+  github: "https://github.com/dakshinsiva",
+};
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const meta = hasData() ? getMeta() : null;
@@ -59,7 +67,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           {children}
         </main>
         <footer className="mt-12 border-t border-line">
-          <div className="mx-auto grid max-w-6xl gap-6 px-4 py-10 text-body-m text-ink-2 sm:grid-cols-[1fr_auto]">
+          <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 text-body-m text-ink-2 md:grid-cols-[1fr_auto]">
             <div className="space-y-3">
               <p className="flex items-center gap-2 text-title-m text-ink">
                 <LogoMark size={22} />
@@ -77,15 +85,41 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                 </p>
               )}
             </div>
-            <div className="flex flex-wrap items-start gap-2 sm:flex-col sm:items-end">
-              <a href={REPO} className="btn-outline">
-                <Icon name="github" size={16} />
-                Open source · MIT
+            <div className="space-y-2 md:text-right">
+              <p className="label-mono text-muted">Created by</p>
+              <p className="text-title-m text-ink">{AUTHOR.name}</p>
+              <ul className="flex flex-wrap gap-x-5 gap-y-2 pt-1 md:justify-end">
+                <li>
+                  <a href={`mailto:${AUTHOR.email}`} className="inline-flex items-center gap-1.5">
+                    <Icon name="mail" size={16} />
+                    {AUTHOR.email}
+                  </a>
+                </li>
+                <li>
+                  <a href={AUTHOR.linkedin} className="inline-flex items-center gap-1.5">
+                    <Icon name="linkedin" size={16} />
+                    LinkedIn
+                  </a>
+                </li>
+                <li>
+                  <a href={AUTHOR.github} className="inline-flex items-center gap-1.5">
+                    <Icon name="github" size={16} />
+                    GitHub
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-line">
+            <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-5 gap-y-2 px-4 py-4 text-body-s text-muted">
+              <a href={REPO} className="inline-flex items-center gap-1.5 text-ink-2">
+                <Icon name="github" size={14} />
+                Open source · MIT licence
               </a>
-              <Link href="/coverage/" className="btn-ghost">
+              <Link href="/coverage/" className="text-ink-2">
                 Data coverage
               </Link>
-              <Link href="/corrections/" className="btn-ghost">
+              <Link href="/corrections/" className="text-ink-2">
                 Corrections &amp; right of reply
               </Link>
             </div>

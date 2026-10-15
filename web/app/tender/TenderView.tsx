@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { Term } from "@/components/Term";
@@ -13,6 +14,10 @@ export function TenderView() {
   const id = useSearchParams().get("id");
   const safe = id && /^\d{1,9}$/.test(id) ? id : null;
   const { data: t, error, loading } = useRecord<TenderDoc>("tenders", safe);
+  // The page shell is static, so name the browser tab after the record once it loads.
+  useEffect(() => {
+    if (t) document.title = `${t.title || t.tender_number} · CivicTrace Bengaluru`;
+  }, [t]);
   if (loading) return <Loading what="tender" />;
   if (error || !t) return <ErrorNote message={error ?? "Tender not found."} />;
 

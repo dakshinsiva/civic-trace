@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { Histogram } from "@/components/charts/Histogram";
@@ -14,6 +15,10 @@ export function FlagView({ rules }: { rules: Record<string, RuleConfig> }) {
   const id = useSearchParams().get("id");
   const safe = id && /^[0-9a-f]{16}$/.test(id) ? id : null;
   const { data: f, error, loading } = useRecord<Flag>("flags", safe);
+  // The page shell is static, so name the browser tab after the record once it loads.
+  useEffect(() => {
+    if (f) document.title = `${f.headline} · CivicTrace Bengaluru`;
+  }, [f]);
   if (loading) return <Loading what="indicator" />;
   if (error || !f) return <ErrorNote message={error ?? "Indicator not found."} />;
   const rule = rules[f.rule_id];

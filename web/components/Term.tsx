@@ -19,7 +19,9 @@ export function Term({ k, children }: { k: keyof typeof GLOSSARY | string; child
         onMouseLeave={() => setOpen(false)}
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
-        onClick={() => setOpen((o) => !o)}
+        // On touch screens the tap also focuses the button, so a toggle here would close it again: click only opens.
+        onClick={() => setOpen(true)}
+        onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
         className="cursor-help border-b border-dotted border-current text-inherit"
       >
         {children ?? g.term}

@@ -76,9 +76,9 @@ export function WhoWinsWhere({ rows, names }: { rows: Fact[]; names: Record<stri
                   role="option"
                   aria-selected={!!active}
                   onClick={() => setSelected(key)}
-                  className={`grid w-full grid-cols-[minmax(0,1fr)_7rem_3rem] items-center gap-2 rounded-md px-2 py-1 text-left text-sm ${active ? "bg-surface-2 ring-1 ring-[var(--accent)]" : "hover:bg-surface-2"}`}
+                  className={`grid w-full grid-cols-[minmax(0,1fr)_3rem] items-center gap-x-2 gap-y-1 rounded-md px-2 py-1.5 text-left text-sm sm:grid-cols-[minmax(0,1fr)_7rem_3rem] sm:py-1 ${active ? "bg-surface-2 ring-1 ring-[var(--accent)]" : "hover:bg-surface-2"}`}
                 >
-                  <span className="truncate" title={m.division}>
+                  <span className="col-span-2 sm:col-span-1 sm:truncate" title={m.division}>
                     {m.division} <span className="text-xs text-muted">({m.n})</span>
                   </span>
                   <span className="h-3 rounded-r-[4px] bg-[var(--grid)]">
@@ -119,8 +119,8 @@ function MarketDetail({ m, names }: { m: Market; names: Record<string, string> }
         {top.map((s) => {
           const share = s.wins / m.n;
           return (
-            <li key={s.id} className="grid grid-cols-[minmax(0,1fr)_8rem_4.5rem] items-center gap-2 text-sm">
-              <Link href={`/supplier/?id=${s.id}`} className="truncate" title={names[String(s.id)]}>
+            <li key={s.id} className="grid grid-cols-[minmax(0,1fr)_4.5rem] items-center gap-x-2 gap-y-1 text-sm sm:grid-cols-[minmax(0,1fr)_8rem_4.5rem]">
+              <Link href={`/supplier/?id=${s.id}`} className="col-span-2 sm:col-span-1 sm:truncate" title={names[String(s.id)]}>
                 {names[String(s.id)] ?? `Supplier ${s.id}`}
               </Link>
               <span className="relative h-3">
@@ -134,9 +134,9 @@ function MarketDetail({ m, names }: { m: Market; names: Record<string, string> }
           );
         })}
         {restWins > 0 && (
-          <li className="grid grid-cols-[minmax(0,1fr)_8rem_4.5rem] items-center gap-2 text-sm text-muted">
+          <li className="grid grid-cols-[minmax(0,1fr)_4.5rem] items-center gap-2 text-sm text-muted sm:grid-cols-[minmax(0,1fr)_8rem_4.5rem]">
             <span>{rest.length} others</span>
-            <span />
+            <span className="hidden sm:block" />
             <span className="tabular text-right text-xs">
               {restWins} · {Math.round((restWins / m.n) * 100)}%
             </span>

@@ -30,42 +30,44 @@ export function StackedColumns({ data, series, title, xKey }: { data: Record<str
         ))}
       </ul>
       <div className="relative">
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label={title}>
-          {ticks.map((t) => (
-            <g key={t}>
-              <line x1={P.l} x2={W - P.r} y1={y(t)} y2={y(t)} stroke="var(--grid)" />
-              <text x={P.l - 6} y={y(t) + 4} fontSize={11} textAnchor="end" fill="var(--muted)" className="tabular">
-                {t.toLocaleString("en-IN")}
-              </text>
-            </g>
-          ))}
-          {data.map((d, i) => {
-            const cx = P.l + band * i + band / 2;
-            let acc = 0;
-            return (
-              <g key={i} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}>
-                <rect x={P.l + band * i} y={P.t} width={band} height={ih} fill="transparent" />
-                {series.map((s, si) => {
-                  const v = Number(d[s.key] || 0);
-                  if (!v) return null;
-                  const y0 = y(acc), y1 = y(acc + v);
-                  acc += v;
-                  const isTop = series.slice(si + 1).every((s2) => !Number(d[s2.key] || 0));
-                  const h = Math.max(0, y0 - y1 - (acc > v ? 2 : 0));
-                  return isTop ? (
-                    <BarPath key={s.key} x={cx - bw / 2} y={y1} w={bw} h={h} fill={s.color} opacity={hover === null || hover === i ? 1 : 0.55} />
-                  ) : (
-                    <rect key={s.key} x={cx - bw / 2} y={y1} width={bw} height={h} fill={s.color} opacity={hover === null || hover === i ? 1 : 0.55} />
-                  );
-                })}
-                <text x={cx} y={H - 8} fontSize={11} textAnchor="middle" fill="var(--muted)">
-                  {String(d[xKey])}
+        <div className="overflow-x-auto">
+          <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto min-w-[34rem]" role="img" aria-label={title}>
+            {ticks.map((t) => (
+              <g key={t}>
+                <line x1={P.l} x2={W - P.r} y1={y(t)} y2={y(t)} stroke="var(--grid)" />
+                <text x={P.l - 6} y={y(t) + 4} fontSize={11} textAnchor="end" fill="var(--muted)" className="tabular">
+                  {t.toLocaleString("en-IN")}
                 </text>
               </g>
-            );
-          })}
-          <line x1={P.l} x2={W - P.r} y1={P.t + ih} y2={P.t + ih} stroke="var(--axis)" />
-        </svg>
+            ))}
+            {data.map((d, i) => {
+              const cx = P.l + band * i + band / 2;
+              let acc = 0;
+              return (
+                <g key={i} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}>
+                  <rect x={P.l + band * i} y={P.t} width={band} height={ih} fill="transparent" />
+                  {series.map((s, si) => {
+                    const v = Number(d[s.key] || 0);
+                    if (!v) return null;
+                    const y0 = y(acc), y1 = y(acc + v);
+                    acc += v;
+                    const isTop = series.slice(si + 1).every((s2) => !Number(d[s2.key] || 0));
+                    const h = Math.max(0, y0 - y1 - (acc > v ? 2 : 0));
+                    return isTop ? (
+                      <BarPath key={s.key} x={cx - bw / 2} y={y1} w={bw} h={h} fill={s.color} opacity={hover === null || hover === i ? 1 : 0.55} />
+                    ) : (
+                      <rect key={s.key} x={cx - bw / 2} y={y1} width={bw} height={h} fill={s.color} opacity={hover === null || hover === i ? 1 : 0.55} />
+                    );
+                  })}
+                  <text x={cx} y={H - 8} fontSize={11} textAnchor="middle" fill="var(--muted)">
+                    {String(d[xKey])}
+                  </text>
+                </g>
+              );
+            })}
+            <line x1={P.l} x2={W - P.r} y1={P.t + ih} y2={P.t + ih} stroke="var(--axis)" />
+          </svg>
+        </div>
         {hover !== null && (
           <div
             className="tooltip pointer-events-none absolute top-0 z-10 tabular"

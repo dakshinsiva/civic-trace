@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { Histogram } from "@/components/charts/Histogram";
 import { Icon } from "@/components/Icon";
@@ -27,6 +27,13 @@ export function Explorer({ buyerNames }: { buyerNames: Record<string, string> })
   const router = useRouter();
   const pathname = usePathname();
   const { data, loading, error } = useJson<FactsFile>("facts.json");
+  const { data: areaGeo } = useJson<{ features: { properties: { ac_no: number; name: string } }[] }>("geo/areas.geojson");
+  const { data: wardGeo } = useJson<{ features: { properties: { key: string; name: string } }[] }>("geo/wards.geojson");
+  const placeNames = useMemo(() => {
+    const a = new Map((areaGeo?.features ?? []).map((f) => [String(f.properties.ac_no), f.properties.name]));
+    const w = new Map((wardGeo?.features ?? []).map((f) => [f.properties.key, f.properties.name]));
+    return { area: (id: string) => a.get(id), ward: (key: string) => w.get(key) };
+  }, [areaGeo, wardGeo]);
   const all = useMemo(() => (data ? decodeFacts(data) : []), [data]);
   const filters: Filters = { ...EMPTY_FILTERS };
   for (const k of FILTER_KEYS) filters[k] = sp.get(k) ?? "";
@@ -34,40 +41,33 @@ export function Explorer({ buyerNames }: { buyerNames: Record<string, string> })
   // The map shows every area, so it ignores the area filter itself.
   const mapRows = useMemo(() => applyFilters(all, { ...filters, area: "" }), [all, filters.buyer, filters.fy, filters.category, filters.division, filters.tenderType]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const set = useCallback(
-    (k: keyof Filters, v: string) => {
+  // One URL update for several keys at once: separate router.replace calls in a row can overwrite each other.
+  const update = useCallback(
+    (patch: Record<string, string>) => {
       const next = new URLSearchParams(window.location.search);
-      if (v) next.set(k, v);
-      else next.delete(k);
-      if (k === "buyer") next.delete("division");
+      for (const [k, v] of Object.entries(patch)) {
+        if (v) next.set(k, v);
+        else next.delete(k);
+      }
+      if ("buyer" in patch) next.delete("division");
       router.replace(`${pathname}?${next.toString()}`, { scroll: false });
     },
     [pathname, router],
   );
+  const set = useCallback((k: keyof Filters, v: string) => update({ [k]: v }), [update]);
 
-  // Selected ward on the map (shareable through the URL)
-  const setWard = useCallback(
-    (v: string) => {
-      const next = new URLSearchParams(window.location.search);
-      if (v) next.set("ward", v);
-      else next.delete("ward");
-      router.replace(`${pathname}?${next.toString()}`, { scroll: false });
-    },
-    [pathname, router],
-  );
+  // Filters start open on wide screens (they sit beside the content) and closed on phones, so the map comes first.
+  const filtersRef = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    if (filtersRef.current && !window.matchMedia("(min-width: 1024px)").matches) filtersRef.current.open = false;
+  }, [loading]);
 
   // Map view (shareable through the URL)
   const measure = (METRICS.find((m) => m.key === sp.get("measure"))?.key ?? "per_capita") as MetricKey;
   const level = sp.get("level") === "wards" ? "wards" : "areas";
-  const setView = useCallback(
-    (v: { measure?: MetricKey; level?: "areas" | "wards" }) => {
-      const next = new URLSearchParams(window.location.search);
-      if (v.measure) next.set("measure", v.measure);
-      if (v.level) next.set("level", v.level);
-      router.replace(`${pathname}?${next.toString()}`, { scroll: false });
-    },
-    [pathname, router],
-  );
+  const setView = useCallback((v: { measure?: MetricKey; level?: "areas" | "wards" }) => update({ ...v }), [update]);
+  // Contract dots and the selected ward are in the URL too, so a shared link shows the same map.
+  const showDots = sp.get("dots") === "1";
 
   const opts = useMemo(() => {
     const scoped = filters.buyer ? all.filter((r) => r.buyer === filters.buyer) : all;
@@ -94,7 +94,7 @@ export function Explorer({ buyerNames }: { buyerNames: Record<string, string> })
   return (
     <div className="space-y-6" id="explore">
       {/* Filters: sticky on wide screens; collapsible on phones */}
-      <details className="card p-4 lg:sticky lg:top-[57px] z-10 group" open>
+      <details ref={filtersRef} className="card p-4 lg:sticky lg:top-[57px] z-10 group" open>
         <summary className="text-title-s text-ink lg:hidden mb-3">
           <Icon name="sliders-horizontal" size={20} />
           Filters{anyFilter ? ` (${FILTER_KEYS.filter((k) => filters[k]).length} active)` : ""}
@@ -128,7 +128,9 @@ export function Explorer({ buyerNames }: { buyerNames: Record<string, string> })
         area={filters.area}
         setArea={(v) => set("area", v)}
         ward={sp.get("ward") ?? ""}
-        setWard={setWard}
+        setWard={(v) => update({ ward: v })}
+        showDots={showDots}
+        setParams={update}
         measure={measure}
         level={level}
         setView={setView}
@@ -137,8 +139,19 @@ export function Explorer({ buyerNames }: { buyerNames: Record<string, string> })
       {filters.area && (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md bg-accent-soft px-4 py-2 text-body-m text-ink">
           <Icon name="map" size={20} />
-          <span className="flex-1">Showing one area from the map. Every chart below is limited to it.</span>
-          <button type="button" className="btn-ghost -my-1 text-ink" onClick={() => set("area", "")}>
+          <span className="flex-1">
+            Charts below show <strong className="font-medium">{placeNames.area(filters.area) ?? "one area"}</strong>
+            {sp.get("ward") && placeNames.ward(sp.get("ward")!) ? (
+              <>
+                {" "}
+                constituency, which contains {placeNames.ward(sp.get("ward")!)}. Contracts are counted by constituency because most
+                tenders name an office, not a ward.
+              </>
+            ) : (
+              " only."
+            )}
+          </span>
+          <button type="button" className="btn-ghost -my-1 text-ink" onClick={() => update({ area: "", ward: "" })}>
             Show the whole city
           </button>
         </div>

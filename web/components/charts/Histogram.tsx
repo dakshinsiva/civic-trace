@@ -58,58 +58,60 @@ export function Histogram({ counts, edges, log = false, marker, markerLabel, ref
     <figure className="w-full">
       <figcaption className="text-sm font-medium text-ink mb-1">{title}</figcaption>
       <div className="relative">
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-labelledby={`${id}-desc`}>
-          <desc id={`${id}-desc`}>
-            Histogram of {xLabel}, {total} records{marker != null ? `; marked value ${fx(marker)}` : ""}.
-          </desc>
-          {yTicks.map((tv) => (
-            <g key={tv}>
-              <line x1={PAD.l} x2={W - PAD.r} y1={y(tv)} y2={y(tv)} stroke="var(--grid)" strokeWidth={1} />
-              <text x={PAD.l - 6} y={y(tv) + 4} textAnchor="end" fontSize={11} fill="var(--muted)" className="tabular">
-                {tv.toLocaleString("en-IN")}
-              </text>
-            </g>
-          ))}
-          {counts.map((c, i) => {
-            const x0 = x(edges[i]);
-            const x1 = x(edges[i + 1]);
-            const w = Math.max(1, x1 - x0 - 2);
-            const h = (c / maxC) * innerH;
-            return (
-              <g key={i} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}>
-                <rect x={x0} y={PAD.t} width={Math.max(1, x1 - x0)} height={innerH} fill="transparent" />
-                {c > 0 && <BarPath x={x0 + 1} y={y(c)} w={w} h={h} fill="var(--series-1)" opacity={hover === null || hover === i ? 1 : 0.55} />}
+        <div className="overflow-x-auto">
+          <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto min-w-[34rem]" role="img" aria-labelledby={`${id}-desc`}>
+            <desc id={`${id}-desc`}>
+              Histogram of {xLabel}, {total} records{marker != null ? `; marked value ${fx(marker)}` : ""}.
+            </desc>
+            {yTicks.map((tv) => (
+              <g key={tv}>
+                <line x1={PAD.l} x2={W - PAD.r} y1={y(tv)} y2={y(tv)} stroke="var(--grid)" strokeWidth={1} />
+                <text x={PAD.l - 6} y={y(tv) + 4} textAnchor="end" fontSize={11} fill="var(--muted)" className="tabular">
+                  {tv.toLocaleString("en-IN")}
+                </text>
               </g>
-            );
-          })}
-          <line x1={PAD.l} x2={W - PAD.r} y1={PAD.t + innerH} y2={PAD.t + innerH} stroke="var(--axis)" strokeWidth={1} />
-          {xTicks.map((tv, i) => (
-            <text key={i} x={x(tv)} y={H - PAD.b + 16} textAnchor="middle" fontSize={11} fill="var(--muted)" className="tabular">
-              {fx(tv)}
+            ))}
+            {counts.map((c, i) => {
+              const x0 = x(edges[i]);
+              const x1 = x(edges[i + 1]);
+              const w = Math.max(1, x1 - x0 - 2);
+              const h = (c / maxC) * innerH;
+              return (
+                <g key={i} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}>
+                  <rect x={x0} y={PAD.t} width={Math.max(1, x1 - x0)} height={innerH} fill="transparent" />
+                  {c > 0 && <BarPath x={x0 + 1} y={y(c)} w={w} h={h} fill="var(--series-1)" opacity={hover === null || hover === i ? 1 : 0.55} />}
+                </g>
+              );
+            })}
+            <line x1={PAD.l} x2={W - PAD.r} y1={PAD.t + innerH} y2={PAD.t + innerH} stroke="var(--axis)" strokeWidth={1} />
+            {xTicks.map((tv, i) => (
+              <text key={i} x={x(tv)} y={H - PAD.b + 16} textAnchor="middle" fontSize={11} fill="var(--muted)" className="tabular">
+                {fx(tv)}
+              </text>
+            ))}
+            <text x={PAD.l + innerW / 2} y={H - 4} textAnchor="middle" fontSize={11} fill="var(--ink-2)">
+              {xLabel}
+              {log ? " (log scale)" : ""}
             </text>
-          ))}
-          <text x={PAD.l + innerW / 2} y={H - 4} textAnchor="middle" fontSize={11} fill="var(--ink-2)">
-            {xLabel}
-            {log ? " (log scale)" : ""}
-          </text>
-          {refs.filter((r) => inRange(r.value)).map((r) => (
-            <g key={r.label}>
-              <line x1={x(r.value)} x2={x(r.value)} y1={PAD.t - 4} y2={PAD.t + innerH} stroke="var(--ink-2)" strokeWidth={1} strokeDasharray="0" opacity={0.7} />
-              <text x={x(r.value) + 4} y={PAD.t + 6} fontSize={11} fill="var(--ink-2)">
-                {r.label}
-              </text>
-            </g>
-          ))}
-          {inRange(marker) && (
-            <g>
-              <line x1={x(marker!)} x2={x(marker!)} y1={PAD.t - 12} y2={PAD.t + innerH} stroke="var(--series-2)" strokeWidth={2} />
-              <circle cx={x(marker!)} cy={PAD.t - 12} r={4} fill="var(--series-2)" stroke="var(--surface)" strokeWidth={2} />
-              <text x={x(marker!) + (x(marker!) > W * 0.7 ? -8 : 8)} y={PAD.t - 8} fontSize={11} fontWeight={600} fill="var(--ink)" textAnchor={x(marker!) > W * 0.7 ? "end" : "start"}>
-                {markerLabel ?? "This record"}: {fx(marker!)}
-              </text>
-            </g>
-          )}
-        </svg>
+            {refs.filter((r) => inRange(r.value)).map((r) => (
+              <g key={r.label}>
+                <line x1={x(r.value)} x2={x(r.value)} y1={PAD.t - 4} y2={PAD.t + innerH} stroke="var(--ink-2)" strokeWidth={1} strokeDasharray="0" opacity={0.7} />
+                <text x={x(r.value) + 4} y={PAD.t + 6} fontSize={11} fill="var(--ink-2)">
+                  {r.label}
+                </text>
+              </g>
+            ))}
+            {inRange(marker) && (
+              <g>
+                <line x1={x(marker!)} x2={x(marker!)} y1={PAD.t - 12} y2={PAD.t + innerH} stroke="var(--series-2)" strokeWidth={2} />
+                <circle cx={x(marker!)} cy={PAD.t - 12} r={4} fill="var(--series-2)" stroke="var(--surface)" strokeWidth={2} />
+                <text x={x(marker!) + (x(marker!) > W * 0.7 ? -8 : 8)} y={PAD.t - 8} fontSize={11} fontWeight={600} fill="var(--ink)" textAnchor={x(marker!) > W * 0.7 ? "end" : "start"}>
+                  {markerLabel ?? "This record"}: {fx(marker!)}
+                </text>
+              </g>
+            )}
+          </svg>
+        </div>
         {hover !== null && (
           <div
             className="tooltip pointer-events-none absolute top-0 z-10 tabular"

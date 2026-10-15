@@ -25,6 +25,8 @@ BSWML. It turns them into a site where anyone can answer plain questions:
   manipulation. Every warning sign comes with its evidence, a comparison baseline, the period and data coverage, source
   links, plausible innocent explanations, and known limitations.
 
+**Live site:** [civictrace-bengaluru.vercel.app](https://civictrace-bengaluru.vercel.app)
+
 Everything is built from public records and links back to its source. The code is open, and so are the rules with
 their thresholds and the way each number is computed, so anyone can inspect, rerun or challenge them.
 
@@ -142,6 +144,11 @@ Issues and pull requests are welcome.
 KPPP's copyright policy allows free reproduction of its material if it is reproduced accurately and the source is
 acknowledged. CivicTrace uses the portal's public JSON service at no more than one request per second, archives every
 response with a sha256 hash, and never bypasses CAPTCHAs or logins. See `docs/SOURCES.md`.
+
+## Built by
+
+Dakshin Raj Siva — [github.com/dakshinsiva](https://github.com/dakshinsiva) · [LinkedIn](https://www.linkedin.com/in/dakshinsiva/) ·
+dakshinrajsiva@gmail.com
 
 ## Licence
 

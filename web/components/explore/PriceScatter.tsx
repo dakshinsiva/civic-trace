@@ -6,10 +6,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 
+import { ContractCard } from "@/components/ContractCard";
 import { BIDDER_COLORS, BIDDER_LABELS, bidderGroup, type Fact } from "@/lib/facts";
 import { inr } from "@/lib/format";
-import { useRecord } from "@/lib/useJson";
-import type { TenderDoc } from "@/lib/types";
 
 const W = 760, H = 380, P = { l: 64, r: 16, t: 16, b: 44 };
 const GROUPS = ["1", "2", "3+", "unknown"] as const;
@@ -153,30 +152,12 @@ export function PriceScatter({ rows }: { rows: Fact[] }) {
 }
 
 function ScatterTip({ p, left, top }: { p: { r: Fact; ratio: number; g: string }; left: number; top: number }) {
-  const { data } = useRecord<TenderDoc>("tenders", String(p.r.nit));
-  const diff = (p.ratio - 1) * 100;
   return (
     <div
-      className="tooltip pointer-events-none absolute z-10 w-72 p-3"
-      style={{ left: `${Math.min(70, Math.max(0, left - 10))}%`, top: `${top > 55 ? top - 40 : top + 4}%` }}
+      className="tooltip pointer-events-none absolute z-10 p-4"
+      style={{ left: `${Math.min(62, Math.max(0, left - 10))}%`, top: `${top > 55 ? top - 50 : top + 4}%` }}
     >
-      <div className="text-title-s text-ink line-clamp-2">{data?.title ?? "Loading…"}</div>
-      <div className="text-muted mt-0.5">
-        {p.r.buyer} · {p.r.division}
-      </div>
-      <div className="mt-1.5 grid grid-cols-2 gap-x-2 tabular">
-        <span className="text-ink-2">Estimate</span>
-        <span>{inr(p.r.ecv)}</span>
-        <span className="text-ink-2">Winning price</span>
-        <span>
-          {inr(p.r.bid)} ({diff >= 0 ? "+" : ""}
-          {diff.toFixed(1)}%)
-        </span>
-        <span className="text-ink-2">Companies competing</span>
-        <span>{p.r.bidders ?? "not published"}</span>
-      </div>
-      {data?.selection?.supplier_name && <div className="mt-1.5 text-ink-2">Won by {data.selection.supplier_name}</div>}
-      <div className="mt-1.5 text-accent">Click to open this tender</div>
+      <ContractCard fact={p.r} footer={<p className="label-mono mt-3 text-accent">Click to open this tender</p>} />
     </div>
   );
 }

@@ -34,6 +34,8 @@ export function MapExplorer({
   setArea,
   ward,
   setWard,
+  showDots,
+  setParams,
   measure,
   level,
   setView,
@@ -49,13 +51,16 @@ export function MapExplorer({
   /** Selected ward key, kept in the URL so a ward can be shared as a link. */
   ward: string;
   setWard: (v: string) => void;
+  /** Show every contract as a dot (kept in the URL as dots=1). */
+  showDots: boolean;
+  /** Change several URL keys in one update (measure, level, area, ward, dots …). */
+  setParams: (patch: Record<string, string>) => void;
   measure: MetricKey;
   level: Level;
   setView: (v: { measure?: MetricKey; level?: Level }) => void;
   /** "buyer|division" from the filters; the map zooms to the region it covers. */
   focusKey?: string;
 }) {
-  const [showDots, setShowDots] = useState(false);
   const wardSel = ward || null;
   const setWardSel = (v: string | null) => setWard(v ?? "");
   const [stats, setStats] = useState<Stats | null>(null);
@@ -181,19 +186,22 @@ export function MapExplorer({
           <h3 className="text-title-l text-ink">{activeQuick?.question ?? metric.question}</h3>
           <select
             value={measure}
-            onChange={(e) => setView({ measure: e.target.value as MetricKey })}
+            onChange={(e) => {
+              setView({ measure: e.target.value as MetricKey });
+              setHintDismissed(true);
+            }}
             className="field h-9 w-full max-w-full text-body-m sm:w-auto"
-            aria-label="Choose what the map shows"
+            aria-label="Choose what to rank places by"
           >
             {METRICS.map((m) => (
               <option key={m.key} value={m.key}>
-                Map shows: {m.label}
+                Rank by: {m.label}
               </option>
             ))}
           </select>
         </div>
         <p className="mt-1 text-body-m text-ink-2">{metric.explain}</p>
-        <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]" role="radiogroup" aria-label="Quick views">
+        <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] lg:flex-wrap lg:overflow-visible" role="radiogroup" aria-label="Quick views">
           {QUICK_VIEWS.map((v) => {
             const on = activeQuick?.id === v.id;
             return (
@@ -203,9 +211,9 @@ export function MapExplorer({
                 role="radio"
                 aria-checked={on}
                 onClick={() => {
-                  setView({ measure: v.metric, level: v.level });
-                  setShowDots(!!v.dots);
+                  setParams({ measure: v.metric, level: v.level, dots: v.dots ? "1" : "" });
                   setFootprintOf(null);
+                  setHintDismissed(true);
                 }}
                 className="chip"
               >
@@ -231,6 +239,7 @@ export function MapExplorer({
             resetCmd={resetCmd}
             fitKey={focusFilter}
             fitIds={fitIds}
+            names={names}
           />
 
           {/* Top-left: detail level, layers, search */}
@@ -243,7 +252,7 @@ export function MapExplorer({
                 </button>
               ))}
             </div>
-            <button type="button" aria-pressed={showDots} onClick={() => setShowDots((d) => !d)} className="chip on-map h-9">
+            <button type="button" aria-pressed={showDots} onClick={() => setParams({ dots: showDots ? "" : "1" })} className="chip on-map h-9">
               <Icon name={showDots ? "check" : "chart-scatter"} size={18} />
               Contracts
             </button>
@@ -264,13 +273,9 @@ export function MapExplorer({
                         type="button"
                         className="state block w-full px-3 py-2 text-left"
                         onClick={() => {
-                          if (h.kind === "ward") {
-                            setView({ level: "wards" });
-                            setWardSel(h.id);
-                          } else {
-                            setView({ level: "areas" });
-                            setArea(h.id);
-                          }
+                          // A searched place opens with its contracts shown as dots.
+                          if (h.kind === "ward") setParams({ level: "wards", ward: h.id, dots: "1" });
+                          else setParams({ level: "areas", area: h.id, dots: "1" });
                           setQuery("");
                           setHintDismissed(true);
                         }}
@@ -301,7 +306,35 @@ export function MapExplorer({
           {/* First-visit hint */}
           {!hintDismissed && !selection && (
             <div className="tooltip-plain pointer-events-none absolute left-1/2 top-1/2 z-10 hidden -translate-x-1/2 -translate-y-1/2 rounded-sm px-4 py-2 text-body-m shadow-[var(--shadow-pop)] sm:block">
-              Hover over an area for a summary · click it for the full story
+              <span className="[@media(hover:none)]:hidden">
+                {showDots ? "Hover a dot to see that contract · click an area for its full story" : "Hover over an area for a summary · click it for the full story"}
+              </span>
+              <span className="hidden [@media(hover:none)]:inline">
+                {showDots ? "Tap a dot to see that contract · tap an area for its full story" : "Tap an area for its full story"}
+              </span>
+            </div>
+          )}
+
+          {/* Legend for the contract dots */}
+          {showDots && (
+            <div className="on-map absolute bottom-16 left-3 z-10 max-w-[calc(100%-4.5rem)] rounded-md border border-line px-3 py-2 text-body-s text-ink-2">
+              <p className="label-mono mb-1.5 text-muted">Each dot is a contract</p>
+              <ul className="flex flex-wrap gap-x-3 gap-y-1">
+                {(["1", "2", "3+", "unknown"] as const).map((g) => (
+                  <li key={g} className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full" style={{ background: BIDDER_COLORS[g] }} aria-hidden />
+                    {g === "1" ? "Only 1 company bid" : g === "2" ? "2 companies" : g === "3+" ? "3 or more" : "Not published"}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-1.5 flex items-center gap-1.5">
+                <span className="inline-flex items-end gap-1" aria-hidden>
+                  <span className="h-1.5 w-1.5 rounded-full bg-ink-2" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-ink-2" />
+                  <span className="h-3.5 w-3.5 rounded-full bg-ink-2" />
+                </span>
+                Bigger dot = bigger winning price
+              </p>
             </div>
           )}
 
@@ -327,6 +360,7 @@ export function MapExplorer({
                 onClick={() => {
                   setPlaying(false);
                   setFy(y);
+                  setHintDismissed(true);
                 }}
                 role="radio"
                 aria-checked={fy === y}
@@ -350,6 +384,7 @@ export function MapExplorer({
               metric={metric}
               footprintOf={footprintOf}
               setFootprintOf={setFootprintOf}
+              onShowArea={(ac) => setParams({ level: "areas", ward: "", area: ac })}
               onClose={() => {
                 setFootprintOf(null);
                 if (sel.kind === "Area") setArea("");
@@ -383,7 +418,17 @@ export function MapExplorer({
                     </li>
                   );
                 })}
-                {!ranking.length && <li className="px-2 text-body-m text-muted">Not enough contracts placed on the map yet for this measure.</li>}
+                {!ranking.length &&
+                  (level === "wards" && metric.key === "per_capita" ? (
+                    <li className="space-y-3 px-2 text-body-m text-ink-2">
+                      <p>Wards are too small for a fair per-person ranking: it needs at least 50,000 residents, and no ward has that many.</p>
+                      <button type="button" className="btn-secondary" onClick={() => setView({ measure: "tenders" })}>
+                        Rank wards by number of tenders
+                      </button>
+                    </li>
+                  ) : (
+                    <li className="px-2 text-body-m text-muted">Not enough contracts placed on the map yet for this measure.</li>
+                  ))}
               </ol>
               <details className="mt-5 rounded-md bg-surface-2 p-3 text-body-s text-ink-2">
                 <summary className="text-label-l text-ink">How to read this map</summary>
@@ -416,6 +461,7 @@ function Profile({
   metric,
   footprintOf,
   setFootprintOf,
+  onShowArea,
   onClose,
 }: {
   kind: "Area" | "Ward";
@@ -425,6 +471,8 @@ function Profile({
   metric: (typeof METRICS)[number];
   footprintOf: number | null;
   setFootprintOf: (id: number | null) => void;
+  /** Switch to the constituency that contains this ward. */
+  onShowArea: (ac: string) => void;
   onClose: () => void;
 }) {
   const pop = Number(props.population) || null;
@@ -447,7 +495,21 @@ function Profile({
       </div>
       <p className="callout mt-3 bg-accent-soft text-ink">{describe(metric, v.value, v.n)}</p>
       {!stat ? (
-        <p className="mt-3 text-sm text-muted">No contracts placed here in the current selection.</p>
+        kind === "Ward" ? (
+          <div className="mt-3 space-y-3 text-body-m text-ink-2">
+            <p>
+              No tender in this release names {String(props.name)} in its title, so none can be pinned to this ward. Contracts for
+              the surrounding area are counted under the <strong className="font-medium text-ink">{String(props.ac)}</strong>{" "}
+              constituency.
+            </p>
+            <button type="button" className="btn-secondary" onClick={() => onShowArea(String(props.ac_no))}>
+              <Icon name="map" size={16} />
+              See {String(props.ac)}&apos;s contracts
+            </button>
+          </div>
+        ) : (
+          <p className="mt-3 text-body-m text-muted">No contracts placed here in the current selection.</p>
+        )
       ) : (
         <div className="mt-4 space-y-4 text-sm">
           <div className="grid grid-cols-2 gap-2">

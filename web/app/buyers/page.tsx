@@ -5,7 +5,7 @@ import { PageTitle } from "@/components/ui";
 import { getMeta, getOverview } from "@/lib/data";
 import { num } from "@/lib/format";
 
-export const metadata = { title: "Buyers" };
+export const metadata = { title: "Departments" };
 
 export default function BuyersPage() {
   const meta = getMeta();
@@ -13,7 +13,7 @@ export default function BuyersPage() {
   const byCode = Object.fromEntries(meta.buyers.map((b) => [b.code, b]));
   return (
     <>
-      <PageTitle title="Buyers">
+      <PageTitle title="Departments">
         <p>
           Procuring entities covered in this release. BBMP was replaced from 15 May 2025 by the Greater Bengaluru Authority
           and five city corporations; older tenders keep the BBMP name on the portal.
@@ -30,7 +30,7 @@ export default function BuyersPage() {
                 {b.code} <span className="text-ink-2">· {b.name}</span>
               </div>
               <div className="text-body-m text-muted mt-1 tabular">
-                {num(b.calls)} tender calls · {num(b.selections)} selections · {num(b.suppliers)} suppliers
+                {num(b.calls)} tenders · {num(b.selections)} winners chosen · {num(b.suppliers)} {b.suppliers === 1 ? "contractor" : "contractors"}
               </div>
               {byCode[b.code]?.note && <div className="text-body-s text-muted mt-1">{byCode[b.code].note}</div>}
             </div>
