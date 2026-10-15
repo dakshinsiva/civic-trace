@@ -98,9 +98,11 @@ export default function CoveragePage() {
         <Section id="unavailable" title={`Records the portal wouldn't give us (${num(unavailable.count)})`}>
           <p className="text-sm text-ink">
             For {num(unavailable.count)} of {num(unavailable.listed)} tenders ({pct(unavailable.count / unavailable.listed, 1)}), the
-            government portal returned an error every time we asked for the full record. Each was tried more than once, at
-            different times (the &ldquo;Attempts&rdquo; column), with three quick retries on every attempt. These tenders still appear in the tender list with what the portal&apos;s search
-            listing shows, but they are left out of every warning sign and finding that needs the missing details.
+            government portal returned an error every time we asked for the full record. Each attempt repeats the request
+            up to four times over about 15 seconds, and failed records are asked for again in later download runs, hours
+            apart (the &ldquo;Attempts&rdquo; column counts those runs). These tenders still appear in the tender list with
+            what the portal&apos;s search listing shows, but they are left out of every warning sign and finding that needs
+            the missing details.
           </p>
           <p className="mt-2 text-sm text-ink-2">
             This is a fault on the portal&apos;s side (it answers with a server error for these records), not a judgement about the
