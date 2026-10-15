@@ -13,11 +13,12 @@ records on the Karnataka Public Procurement Portal (KPPP) and puts them on a map
 
 **Open the site: [civictrace-bengaluru.vercel.app](https://civictrace-bengaluru.vercel.app)**
 
-![J.P Nagar ward on the CivicTrace map, with every contract shown as a dot and one contract's details open](docs/images/map-contract-dots.png)
+![Puttenahalli ward on the CivicTrace map: only its contracts are shown, and the one at Puttenahalli Lake is open](docs/images/map-contract-dots.png)
 
-*J.P Nagar ward on the map. Each dot is a contract, coloured by how many companies bid and sized by its winning price.
-Pointing at one shows the work, the winner and the price against the official estimate; the panel on the right sums up
-the ward.*
+*Puttenahalli ward after searching for it: the map shows only its contracts. Each dot is a contract, coloured by how
+many companies bid and sized by its winning price. The ringed dot sits at Puttenahalli Lake, the place the tender
+names; faded dots are somewhere in the ward. Pointing at one shows the work, the winner and the price against the
+official estimate; the panel on the right sums up the ward.*
 
 ## How to use it
 
@@ -38,8 +39,8 @@ the ward.*
 
 | Every ward has its own page | Search with ⌘K |
 |---|---|
-| ![Puttenahalli ward page: its numbers and its contracts on the map](docs/images/ward-page.png) | ![Searching "putten" finds the Puttenahalli ward and tenders that mention it](docs/images/search.png) |
-| *[Puttenahalli](https://civictrace-bengaluru.vercel.app/wards/puttenahalli-south-55/): 17 tenders, ₹4.48 crore in winning bids, the share where only one company bid, and every contract on the map.* | *Search finds wards in English or Kannada, tenders by the words in their titles, contractors, departments and pages.* |
+| ![J.P Nagar ward page: its numbers and its contracts on the map](docs/images/ward-page.png) | ![Searching "putten" finds the Puttenahalli ward and tenders that mention it](docs/images/search.png) |
+| *[J.P Nagar](https://civictrace-bengaluru.vercel.app/wards/jp-nagar-south-14/): 30 tenders, ₹17.0 crore in winning bids, the share where only one company bid, and every contract on the map.* | *Search finds wards in English or Kannada, tenders by the words in their titles, contractors, departments and pages.* |
 
 ## What it covers
 
