@@ -20,7 +20,7 @@ export function Logo({ city = "Bengaluru" }: { city?: string }) {
     <span className="flex items-center gap-2.5">
       <LogoMark size={28} />
       <span className="text-[1.0625rem] font-semibold tracking-[-0.035em] text-ink">CivicTrace</span>
-      {city && <span className="label-mono hidden rounded-sm border border-line px-1.5 py-0.5 text-muted sm:inline">{city}</span>}
+      {city && <span className="label-mono hidden rounded-sm border border-line px-1.5 py-0.5 text-muted sm:inline lg:hidden xl:inline">{city}</span>}
     </span>
   );
 }

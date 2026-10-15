@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
+import { CommandPalette, OPEN_SEARCH_EVENT } from "./CommandPalette";
 import { Icon, type IconName } from "./Icon";
 import { Logo } from "./Logo";
 
@@ -13,6 +14,7 @@ type NavItem = { href: string; label: string; icon: IconName; also?: string[] };
 
 const PRIMARY: NavItem[] = [
   { href: "/", label: "Explore", icon: "map" },
+  { href: "/areas/", label: "Areas", icon: "map-pin", also: ["/wards/"] },
   { href: "/findings/", label: "How widespread?", icon: "chart-spline" },
   { href: "/flags/", label: "Warning signs", icon: "flag", also: ["/flag/"] },
   { href: "/tenders/", label: "All tenders", icon: "scroll-text", also: ["/tender/", "/supplier/"] },
@@ -42,6 +44,12 @@ export function AppBar({ relationships }: { relationships: boolean }) {
   const [learnOpen, setLearnOpen] = useState(false);
   const learnRef = useRef<HTMLDivElement>(null);
   const primary = relationships ? [...PRIMARY, INTERNAL] : PRIMARY;
+  // Show the shortcut the visitor's keyboard actually has (server render assumes a Mac).
+  const isMac = useSyncExternalStore(
+    () => () => {},
+    () => /Mac|iPhone|iPad/.test(navigator.platform),
+    () => true,
+  );
   const learnActive = LEARN.some((i) => isActive(path, i));
 
   // Close the "Learn" menu on outside click or Escape
@@ -77,7 +85,7 @@ export function AppBar({ relationships }: { relationships: boolean }) {
                 key={item.href}
                 href={item.href}
                 aria-current={on ? "page" : undefined}
-                className={`state flex h-8 items-center rounded-md px-3 text-body-m no-underline hover:no-underline ${on ? "bg-surface-2 text-ink" : "text-ink-2 hover:text-ink"}`}
+                className={`state flex h-8 items-center whitespace-nowrap rounded-md px-3 text-body-m no-underline hover:no-underline ${on ? "bg-surface-2 text-ink" : "text-ink-2 hover:text-ink"}`}
               >
                 {item.label}
               </Link>
@@ -113,10 +121,25 @@ export function AppBar({ relationships }: { relationships: boolean }) {
             )}
           </div>
         </nav>
-        <a href={REPO} className="icon-btn ml-auto lg:ml-2" aria-label="Source code on GitHub" title="Source code on GitHub">
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new Event(OPEN_SEARCH_EVENT))}
+          className="state ml-auto hidden h-8 items-center gap-2 rounded-md border border-line pl-2.5 pr-1.5 text-body-s text-muted hover:text-ink md:flex lg:ml-3"
+          aria-label="Search the site"
+        >
+          <Icon name="search" size={14} />
+          <span className="lg:hidden xl:inline">Search</span>
+          <kbd className="label-mono rounded-xs border border-line px-1 text-muted">{isMac ? "⌘K" : "Ctrl K"}</kbd>
+        </button>
+        <button type="button" className="icon-btn ml-auto md:hidden" aria-label="Search the site" onClick={() => window.dispatchEvent(new Event(OPEN_SEARCH_EVENT))}>
+          <Icon name="search" size={18} />
+        </button>
+        <a href={REPO} className="icon-btn md:ml-1" aria-label="Source code on GitHub" title="Source code on GitHub">
           <Icon name="github" size={18} />
         </a>
       </div>
+
+      <CommandPalette />
 
       {/* Navigation drawer (phones and tablets) */}
       <dialog
