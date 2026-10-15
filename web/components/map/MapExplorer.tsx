@@ -7,6 +7,7 @@ import { describe, formatMetric, METRICS, metricValue, RAMPS, type AreaStat, typ
 import type { Fact } from "@/lib/facts";
 import { BIDDER_COLORS } from "@/lib/facts";
 import { inr } from "@/lib/format";
+import { matchesPlace } from "@/lib/places";
 
 import { Icon } from "../Icon";
 import { CityMap, type Level, type MapSelection } from "./CityMap";
@@ -166,8 +167,8 @@ export function MapExplorer({
   const searchHits =
     q.length >= 2
       ? [
-          ...areaNames.filter((a) => a.name.toLowerCase().includes(q)).map((a) => ({ kind: "area" as const, id: a.id, name: a.name, sub: "area" })),
-          ...wardNames.filter((w) => w.name.toLowerCase().includes(q)).map((w) => ({ kind: "ward" as const, id: w.key, name: w.name, sub: `ward · ${w.ac}` })),
+          ...areaNames.filter((a) => matchesPlace(a.name, q)).map((a) => ({ kind: "area" as const, id: a.id, name: a.name, sub: "area" })),
+          ...wardNames.filter((w) => matchesPlace(w.name, q)).map((w) => ({ kind: "ward" as const, id: w.key, name: w.name, sub: `ward · ${w.ac}` })),
         ].slice(0, 8)
       : [];
 

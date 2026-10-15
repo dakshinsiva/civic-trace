@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useId, useMemo, useState } from "react";
 
+import { matchesPlace as matches } from "@/lib/places";
 import { useJson } from "@/lib/useJson";
 
 import { Icon } from "./Icon";
@@ -13,29 +14,6 @@ type Geo<P> = { features: { properties: P; geometry?: Geometry }[] };
 type WardProps = { key: string; name: string; name_kn?: string; ac_no: number; ac: string; corporation: string };
 type AreaProps = { ac_no: number; name: string; wards: number };
 type Hit = { kind: "ward" | "area"; id: string; ac: number; name: string; alt?: string; sub: string };
-
-/**
- * Spelling-tolerant key: letters only, and no "h" or vowels after the first letter, so "B.T.M Layout" matches
- * "btm layout", "Malleswaram" matches "Malleshwaram" and "KR Puram" matches "K.R. Pura".
- * (The same idea as the ward matching in pipeline/civictrace/geo.py.)
- */
-function skeleton(s: string): string {
-  const letters = s.toLowerCase().replace(/[^a-z]/g, "");
-  return letters.slice(0, 1) + letters.slice(1).replace(/[aeiouh]/g, "");
-}
-
-function matches(name: string, query: string): boolean {
-  if (name.toLowerCase().includes(query.toLowerCase())) return true;
-  const b = skeleton(query);
-  if (b.length < 3) return false;
-  // The tolerant match must start at a word, or "kengeri" would match "Tilak Nagara".
-  const words = name.split(/\s+/);
-  for (let i = 0; i < words.length; i++) {
-    const a = skeleton(words.slice(i).join(" "));
-    if (a.startsWith(b) || (a.length >= 4 && b.startsWith(a))) return true;
-  }
-  return false;
-}
 
 /** Ray-casting point-in-polygon on [lon, lat] rings (holes count as outside). */
 function inRings(pt: [number, number], rings: Ring[]): boolean {
