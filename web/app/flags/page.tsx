@@ -4,8 +4,14 @@ import { Loading, PageTitle } from "@/components/ui";
 import { getMeta, getOverview } from "@/lib/data";
 
 import { FlagsExplorer } from "./FlagsExplorer";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = { title: "Warning signs" };
+export const metadata = pageMetadata({
+  title: "Warning signs in Bengaluru public works tenders",
+  description:
+    "Every warning sign found in Bengaluru's public works tenders, each with its evidence, what it was compared with, and the innocent explanations. Warning signs are not proof.",
+  path: "/flags/",
+});
 
 export default function FlagsPage() {
   const meta = getMeta();

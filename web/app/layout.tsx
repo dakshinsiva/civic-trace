@@ -8,30 +8,32 @@ import { Icon } from "@/components/Icon";
 import { LogoMark } from "@/components/Logo";
 import { getMeta, hasData, relationshipsEnabled } from "@/lib/data";
 import { date } from "@/lib/format";
+import { AUTHOR, pageMetadata, REPO, SITE_NAME, SITE_URL } from "@/lib/seo";
 
 import "./globals.css";
 
+const HOME_TITLE = "CivicTrace Bengaluru: who gets the city's public works contracts";
+const HOME_DESCRIPTION =
+  "See who gets the public works contracts in your area of Bengaluru (Bangalore): tenders, winning bids, contractors and warning signs for every ward, from the Karnataka government's public procurement records. Open source. Warning signs are not proof.";
+
 export const metadata: Metadata = {
   // Absolute base for the share image and other URL metadata (the site is built locally, not on Vercel).
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://civictrace-bengaluru.vercel.app"),
-  title: { default: "CivicTrace Bengaluru · Who gets the city's public works contracts", template: "%s · CivicTrace Bengaluru" },
-  description:
-    "See who gets the public works contracts in your area of Bengaluru: tenders, winning bids and warning signs, from the Karnataka government's public procurement records. Open source. Warning signs are not proof.",
-  openGraph: { siteName: "CivicTrace Bengaluru", type: "website", locale: "en_IN" },
-  twitter: { card: "summary_large_image" },
+  metadataBase: new URL(SITE_URL),
+  ...pageMetadata({ title: HOME_TITLE, description: HOME_DESCRIPTION, path: "/" }),
+  title: { default: HOME_TITLE, template: "%s · CivicTrace Bengaluru" },
+  applicationName: SITE_NAME,
+  authors: [{ name: AUTHOR.name, url: AUTHOR.linkedin }],
+  creator: AUTHOR.name,
+  category: "government",
+  keywords: [
+    "Bengaluru", "Bangalore", "BBMP tenders", "GBA", "Greater Bengaluru Authority", "public works", "ward", "contractors",
+    "KPPP", "Karnataka procurement", "government contracts", "transparency", "open data", "civic tech",
+  ],
 };
 
 // Geist and Geist Mono, self-hosted at build time (no request to Google from visitors' browsers).
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" });
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono", display: "swap" });
-
-const REPO = "https://github.com/dakshinsiva/civic-trace";
-const AUTHOR = {
-  name: "Dakshin Raj Siva",
-  email: "dakshinrajsiva@gmail.com",
-  linkedin: "https://www.linkedin.com/in/dakshinsiva/",
-  github: "https://github.com/dakshinsiva",
-};
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const meta = hasData() ? getMeta() : null;

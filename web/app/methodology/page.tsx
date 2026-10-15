@@ -1,7 +1,13 @@
 import { PageTitle, Section } from "@/components/ui";
 import { getMeta } from "@/lib/data";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = { title: "Methodology" };
+export const metadata = pageMetadata({
+  title: "How we check Bengaluru's tenders",
+  description:
+    "How CivicTrace Bengaluru checks every tender: the six warning-sign rules, their thresholds, the data sources and the known limitations.",
+  path: "/methodology/",
+});
 
 const SKIP = new Set(["number", "version", "name", "ocp_ref", "enabled", "summary", "method", "non_fraud_explanations", "limitations"]);
 

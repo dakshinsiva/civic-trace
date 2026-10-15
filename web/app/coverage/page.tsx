@@ -1,8 +1,14 @@
 import { PageTitle, Section } from "@/components/ui";
 import { getMeta } from "@/lib/data";
 import { date, num, pct } from "@/lib/format";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = { title: "Data coverage" };
+export const metadata = pageMetadata({
+  title: "Data coverage",
+  description:
+    "How much of Bengaluru's public works tender data has been read so far, field by field and department by department.",
+  path: "/coverage/",
+});
 
 export default function CoveragePage() {
   const meta = getMeta();

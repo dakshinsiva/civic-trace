@@ -1,8 +1,14 @@
 import { PageTitle, Section } from "@/components/ui";
 import { getMeta } from "@/lib/data";
 import { date } from "@/lib/format";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = { title: "Corrections & right of reply" };
+export const metadata = pageMetadata({
+  title: "Corrections and right of reply",
+  description:
+    "Report an error in CivicTrace Bengaluru: how corrections and right of reply work, and which records are withheld while they are checked.",
+  path: "/corrections/",
+});
 
 export default function CorrectionsPage() {
   const meta = getMeta();

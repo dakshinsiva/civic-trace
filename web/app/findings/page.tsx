@@ -4,8 +4,14 @@ import { Term } from "@/components/Term";
 import { PageTitle } from "@/components/ui";
 import { getFindings, getMeta, type Stat } from "@/lib/data";
 import { date, inr, num } from "@/lib/format";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = { title: "How widespread are the warning signs?" };
+export const metadata = pageMetadata({
+  title: "How common are the warning signs in Bengaluru's tenders?",
+  description:
+    "How common are warning signs in Bengaluru's public works tenders? Single-bidder contracts, prices at the estimate, short deadlines and more, with 95% ranges, from public KPPP records.",
+  path: "/findings/",
+});
 
 const pct = (x: number | null | undefined, d = 0) => (x == null ? "—" : `${(x * 100).toFixed(d)}%`);
 const ci = (s: Stat) => (s.ci95 ? `${pct(s.ci95[0])}–${pct(s.ci95[1])}` : "—");

@@ -1,7 +1,13 @@
 import { PageTitle } from "@/components/ui";
 import { GLOSSARY } from "@/lib/glossary";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = { title: "Glossary" };
+export const metadata = pageMetadata({
+  title: "Glossary of tender terms",
+  description:
+    "Plain-language definitions of the tender and procurement terms used on CivicTrace Bengaluru: estimate, price round, change notice, reserved tender and more.",
+  path: "/glossary/",
+});
 
 export default function GlossaryPage() {
   const entries = Object.entries(GLOSSARY).sort(([, a], [, b]) => a.term.localeCompare(b.term));

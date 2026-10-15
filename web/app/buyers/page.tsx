@@ -4,8 +4,14 @@ import { Icon } from "@/components/Icon";
 import { PageTitle } from "@/components/ui";
 import { getMeta, getOverview } from "@/lib/data";
 import { num } from "@/lib/format";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = { title: "Departments" };
+export const metadata = pageMetadata({
+  title: "Bengaluru departments that issue public works tenders",
+  description:
+    "BBMP, the Greater Bengaluru Authority, the five city corporations, B-SMILE and BSWML: their public works tenders, winning bids, contractors and warning signs.",
+  path: "/buyers/",
+});
 
 export default function BuyersPage() {
   const meta = getMeta();

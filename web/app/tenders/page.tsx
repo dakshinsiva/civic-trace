@@ -4,8 +4,14 @@ import { Loading, PageTitle } from "@/components/ui";
 import { getMeta } from "@/lib/data";
 
 import { TendersExplorer } from "./TendersExplorer";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = { title: "Tenders" };
+export const metadata = pageMetadata({
+  title: "All Bengaluru public works tenders",
+  description:
+    "Search every public works tender issued in Bengaluru (Bangalore) since May 2023 by BBMP, GBA and the city corporations: estimates, winning bids, winners and warning signs.",
+  path: "/tenders/",
+});
 
 export default function TendersPage() {
   const meta = getMeta();

@@ -5,6 +5,7 @@ import { RateBars } from "@/components/charts/RateBars";
 import { PageTitle, Section, Stat } from "@/components/ui";
 import { getBuyer, getMeta, getOverview } from "@/lib/data";
 import { inr, num, statusLabel } from "@/lib/format";
+import { pageMetadata } from "@/lib/seo";
 
 export const dynamicParams = false;
 
@@ -14,7 +15,12 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
-  return { title: `Buyer ${code}` };
+  const name = getMeta().buyers.find((x) => x.code === code)?.name ?? code;
+  return pageMetadata({
+    title: `${name} (${code}): public works tenders`,
+    description: `Public works tenders issued by ${name} (${code}), Bengaluru: winning bids, contractors, how many companies competed, and warning signs. From public KPPP records.`,
+    path: `/buyers/${code}/`,
+  });
 }
 
 export default async function BuyerPage({ params }: { params: Promise<{ code: string }> }) {

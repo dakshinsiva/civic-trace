@@ -1,8 +1,14 @@
 import Link from "next/link";
 
 import { PageTitle, Section } from "@/components/ui";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = { title: "How tender manipulation works" };
+export const metadata = pageMetadata({
+  title: "How tender manipulation works",
+  description:
+    "How public works tenders can be steered (single bidders, rushed deadlines, bid rotation and more), and what public records can and cannot reveal, in plain language.",
+  path: "/patterns/",
+});
 
 type Scheme = {
   name: string;
