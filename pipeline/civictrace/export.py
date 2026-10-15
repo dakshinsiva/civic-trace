@@ -609,6 +609,8 @@ def _findings(calls: pd.DataFrame, flags: list[dict], rule_summary: dict, cfg: d
 
     The detail fetch order is month-stratified and pseudo-random within each month, so the
     fetched calls are close to a random sample of all listed calls while the backfill runs.
+    Calls whose full record the portal refused ("unavailable") stay in: their award and bidder
+    list usually did load, and each figure below only counts calls that have the fields it needs.
     """
     fetched = calls[(calls["detail_state"] != "pending") & (~calls["quarantined"])]
     n_fetched, n_listed = int(len(fetched)), int(len(calls))

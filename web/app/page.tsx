@@ -135,8 +135,8 @@ export default function Home() {
           </div>
           <p className="mt-2.5 text-body-s text-ink-2">
             We have the full details of {num(meta.counts.calls_with_details)} of the {num(meta.counts.calls)} tenders. For the
-            other {num(unavailable)}, the government portal returns an error every time we ask, so they are left out of the
-            figures below until it does.
+            other {num(unavailable)}, the government portal returns an error for the main record every time we ask. Their bidder
+            list and award usually loaded, and the figures below use whatever parts did.
           </p>
         </div>
       )}

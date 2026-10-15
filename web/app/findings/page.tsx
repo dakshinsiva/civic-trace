@@ -17,7 +17,8 @@ const pct = (x: number | null | undefined, d = 0) => (x == null ? "—" : `${(x 
 const ci = (s: Stat) => (s.ci95 ? `${pct(s.ci95[0])}–${pct(s.ci95[1])}` : "—");
 function inWords(x: number | null): string {
   if (x == null) return "—";
-  if (x >= 0.7) return "about 3 in 4";
+  if (x >= 0.73) return "about 3 in 4";
+  if (x >= 0.68) return "about 7 in 10";
   if (x >= 0.6) return "about 2 in 3";
   if (x >= 0.45) return "about half";
   if (x >= 0.3) return "about 1 in 3";
@@ -44,30 +45,36 @@ export default function FindingsPage() {
   const rushedRare = (f.window_under_7_days.share ?? 1) < 0.05;
   const changedRare = (f.changed_3_plus_times.share ?? 1) < 0.05;
   const competitionEffect = b.three_plus != null && b.two != null ? b.two - b.three_plus : null;
+  // Still downloading (tenders not yet tried) vs. done, with only the portal's refusals missing.
+  const stillReading =
+    f.coverage.pending_calls != null
+      ? f.coverage.pending_calls / f.coverage.listed_calls >= 0.02
+      : (f.coverage.fetched_share ?? 0) < 0.98;
 
   return (
     <div className="space-y-10">
       <PageTitle eyebrow="Findings · updated with every data release" title="How common are the warning signs in Bengaluru's tenders?">
         <p className="text-lg">
           No public record can tell us how much corruption there is. What records <em>can</em> show is how often the patterns
-          investigators associate with it appear. Here is what {num(f.coverage.fetched_calls)} tenders read in full show
-          so far.
+          investigators associate with it appear. Here is what {num(f.coverage.fetched_calls)} tenders show
+          {stillReading ? " so far" : ""}.
         </p>
       </PageTitle>
 
-      {(f.coverage.fetched_share ?? 0) < 0.98 && (
+      {stillReading && (
         <div role="note" className="rounded-md border border-notice-border bg-notice-bg px-4 py-3 text-sm text-notice-ink">
           <strong>Based on a sample.</strong> {num(f.coverage.fetched_calls)} of {num(f.coverage.listed_calls)} tenders (
-          {pct(f.coverage.fetched_share, 1)}) have been read in full so far. They are read month by month in a random order,
+          {pct(f.coverage.fetched_share, 1)}) have been downloaded so far. They are read month by month in a random order,
           so they work like a random sample: each figure below comes with a <strong>95% range</strong>, the span the true
           figure very likely falls in. The ranges narrow as more tenders are read.
         </div>
       )}
       {(f.coverage.unavailable_calls ?? 0) > 0 && (
         <p className="text-sm text-ink-2">
-          {num(f.coverage.unavailable_calls ?? 0)} tenders ({pct((f.coverage.unavailable_calls ?? 0) / f.coverage.listed_calls, 1)}) could not be
-          read in full: the government portal returned an error for them, including on later retries. They are left out of the
-          figures below. <Link href="/coverage/#unavailable">See which ones</Link>.
+          For {num(f.coverage.unavailable_calls ?? 0)} of these tenders ({pct((f.coverage.unavailable_calls ?? 0) / f.coverage.listed_calls, 1)}),
+          the government portal returned an error for the main record, including on later retries, though their bidder list
+          and award usually loaded. Each figure below counts a tender only when it has the details that figure needs.{" "}
+          <Link href="/coverage/#unavailable">See which ones</Link>.
         </p>
       )}
 
