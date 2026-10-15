@@ -70,6 +70,7 @@ export type CoverageRow = {
   calls: number;
   details_fetched: number;
   detail_unavailable: number;
+  detail_pending?: number;
   first_published: string | null;
   last_published: string | null;
   fields: Record<string, { label: string; completeness: number; n: number }>;

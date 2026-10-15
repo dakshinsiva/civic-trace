@@ -25,6 +25,10 @@ export default function Home() {
   const o = getOverview();
   const buyerNames = Object.fromEntries(meta.buyers.map((b) => [b.code, b.name]));
   const detailShare = meta.counts.calls ? meta.counts.calls_with_details / meta.counts.calls : 0;
+  // Not yet fetched vs. refused by the portal on every attempt: only the first means "still collecting".
+  const pending = meta.coverage.reduce((a, c) => a + (c.detail_pending ?? 0), 0);
+  const unavailable = meta.coverage.reduce((a, c) => a + c.detail_unavailable, 0);
+  const collecting = meta.counts.calls > 0 && pending / meta.counts.calls >= 0.02;
   const share = o.base_rate.share;
 
   return (
@@ -118,7 +122,26 @@ export default function Home() {
         </ol>
       </section>
 
-      {detailShare < 0.98 && (
+      {!collecting && unavailable > 0 && (
+        <div role="note" className="rounded-lg border border-line px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+            <span className="label-mono flex items-center gap-2 text-ink-2">
+              <Icon name="circle-alert" size={14} />
+              Download complete · {pct(detailShare, 0)} read in full
+            </span>
+            <Link href="/coverage/#unavailable" className="text-body-s">
+              Which ones are missing
+            </Link>
+          </div>
+          <p className="mt-2.5 text-body-s text-ink-2">
+            We have the full details of {num(meta.counts.calls_with_details)} of the {num(meta.counts.calls)} tenders. For the
+            other {num(unavailable)}, the government portal returns an error every time we ask, so they are left out of the
+            figures below until it does.
+          </p>
+        </div>
+      )}
+
+      {collecting && (
         <div role="note" className="rounded-lg border border-line px-4 py-3">
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
             <span className="label-mono flex items-center gap-2 text-notice-ink">
