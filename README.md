@@ -120,7 +120,7 @@ python3 -m http.server 3210 --directory web/out
 Tenders are placed on the map by their engineering division (BBMP divisions follow assembly constituencies) and by
 official ward names found in their titles, with spelling-tolerant matching. Ward numbers are ignored because titles mix
 numbering schemes, and zone-wide departments are left off the map rather than guessed. About 75% of tenders get an
-area and about 40% a ward. See `pipeline/civictrace/geo.py` and `pipeline/tests/test_geo.py`.
+area and about 45% a ward. See `pipeline/civictrace/geo.py` and `pipeline/tests/test_geo.py`.
 
 KPPP publishes no worksite coordinates. When a title names a place, such as "Annual Maintenance of Puttenahalli
 Lake", the dot is put on that place using OpenStreetMap, but only when the place lies inside the tender's own ward
