@@ -2,7 +2,7 @@
 // geo tags. Child segments replace (not merge) openGraph/twitter/other, so each page gets the full set from here.
 import type { Metadata } from "next";
 
-export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://civictrace-bengaluru.vercel.app";
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://civictrace-blr.vercel.app";
 export const SITE_NAME = "CivicTrace Bengaluru";
 export const AUTHOR = {
   name: "Dakshin Raj Siva",

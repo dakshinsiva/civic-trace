@@ -5,7 +5,7 @@ import { areaSlugs, wardSlugs } from "@/lib/placeData";
 
 export const dynamic = "force-static";
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://civictrace-bengaluru.vercel.app";
+const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://civictrace-blr.vercel.app";
 
 // Pages with their own address. Tender, contractor and warning-sign pages are read from the URL query in the browser,
 // and contractor pages are kept out of search engines on purpose, so they are not listed.

@@ -11,7 +11,7 @@ CivicTrace Bengaluru is a free, open-source website for tracking public works te
 roads, drains, footpaths, streetlights, lakes and building repairs the city pays contractors to do. It reads the public
 records on the Karnataka Public Procurement Portal (KPPP) and puts them on a map that anyone can use.
 
-**Open the site: [civictrace-bengaluru.vercel.app](https://civictrace-bengaluru.vercel.app)**
+**Open the site: [civictrace-blr.vercel.app](https://civictrace-blr.vercel.app)**
 
 ![Puttenahalli ward on the CivicTrace map: only its contracts are shown, and the one at Puttenahalli Lake is open](docs/images/map-contract-dots.png)
 
@@ -34,13 +34,13 @@ official estimate; the panel on the right sums up the ward.*
    sign shows its evidence and the ordinary reasons it could happen.
 5. **Open your ward's page.** Every ward and constituency has its own page with its numbers, its contracts on the map,
    who wins the work and the most recent contracts. Browse them all at
-   [/areas/](https://civictrace-bengaluru.vercel.app/areas/).
+   [/areas/](https://civictrace-blr.vercel.app/areas/).
 6. **Share what you find.** Every view has its own link, so you can send your neighbours the page for your ward.
 
 | Every ward has its own page | Search with ⌘K |
 |---|---|
 | ![J.P Nagar ward page: its numbers and its contracts on the map](docs/images/ward-page.png) | ![Searching "putten" finds the Puttenahalli ward and tenders that mention it](docs/images/search.png) |
-| *[J.P Nagar](https://civictrace-bengaluru.vercel.app/wards/jp-nagar-south-14/): 30 tenders, ₹17.0 crore in winning bids, the share where only one company bid, and every contract on the map.* | *Search finds wards in English or Kannada, tenders by the words in their titles, contractors, departments and pages.* |
+| *[J.P Nagar](https://civictrace-blr.vercel.app/wards/jp-nagar-south-14/): 30 tenders, ₹17.0 crore in winning bids, the share where only one company bid, and every contract on the map.* | *Search finds wards in English or Kannada, tenders by the words in their titles, contractors, departments and pages.* |
 
 ## What it covers
 
