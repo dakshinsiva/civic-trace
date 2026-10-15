@@ -13,16 +13,31 @@ records on the Karnataka Public Procurement Portal (KPPP) and puts them on a map
 
 **Open the site: [civictrace-bengaluru.vercel.app](https://civictrace-bengaluru.vercel.app)**
 
+![J.P Nagar ward on the CivicTrace map, with every contract shown as a dot and one contract's details open](docs/images/map-contract-dots.png)
+
+*J.P Nagar ward on the map. Each dot is a contract, coloured by how many companies bid and sized by its winning price.
+Pointing at one shows the work, the winner and the price against the official estimate; the panel on the right sums up
+the ward.*
+
 ## How to use it
 
-1. **Find your area.** Type your ward or neighbourhood, in English or Kannada, or tap **Use my location**.
+1. **Find your area.** Type your ward or neighbourhood, in English or Kannada, tap **Use my location**, or press
+   **⌘K** (Ctrl+K) anywhere to search places, tenders and contractors.
 2. **Look at the map.** Each dot is a contract. Point at one, or tap it on a phone, to see what the work was, who won
    it, the winning price, the government's own estimate and how many companies bid.
 3. **Compare areas.** The list beside the map ranks places by winning bids per resident, by how often only one company
    bid, and more. The charts below the map follow the area you pick.
 4. **Read the warning signs.** Every tender is checked for six patterns that can point to a rigged tender. Each warning
    sign shows its evidence and the ordinary reasons it could happen.
-5. **Share what you find.** Every view has its own link, so you can send your neighbours the page for your ward.
+5. **Open your ward's page.** Every ward and constituency has its own page with its numbers, its contracts on the map,
+   who wins the work and the most recent contracts. Browse them all at
+   [/areas/](https://civictrace-bengaluru.vercel.app/areas/).
+6. **Share what you find.** Every view has its own link, so you can send your neighbours the page for your ward.
+
+| Every ward has its own page | Search with ⌘K |
+|---|---|
+| ![Puttenahalli ward page: its numbers and its contracts on the map](docs/images/ward-page.png) | ![Searching "putten" finds the Puttenahalli ward and tenders that mention it](docs/images/search.png) |
+| *[Puttenahalli](https://civictrace-bengaluru.vercel.app/wards/puttenahalli-south-55/): 17 tenders, ₹4.48 crore in winning bids, the share where only one company bid, and every contract on the map.* | *Search finds wards in English or Kannada, tenders by the words in their titles, contractors, departments and pages.* |
 
 ## What it covers
 
@@ -49,7 +64,7 @@ pipeline/   Python (uv): polite KPPP client, SQLite store, rules engine, static 
   tests/    golden tests per rule, parser tests on recorded portal responses, claims/graph tests
 web/        Next.js static site: interactive explorer, warning-sign evidence pages, tenders, suppliers, departments
 data/       SQLite store (gitignored), raw archive (gitignored), claims/ and evidence/ (committed)
-docs/       SOURCES.md (what the portal provides, verified), CORRECTIONS.md
+docs/       SOURCES.md (what the portal provides, verified), CORRECTIONS.md, images/ (README screenshots)
 ```
 
 ## Quick start
@@ -72,6 +87,11 @@ python3 -m http.server 3210 --directory web/out
 
 ## What the site shows
 
+- **Area and ward pages** (`/areas/`, `/areas/<name>/`, `/wards/<name>-<key>/`): an overview of each of the 28
+  constituencies and 369 wards, with a map zoomed to the place, plain numbers, top contractors, recent contracts, a
+  yearly breakdown and links between a ward and its constituency. Each page has its own title, description, geo tags
+  and structured data, and all of them are listed in `sitemap.xml`.
+- **Site search** (⌘K / Ctrl+K or `/`): places, pages, warning signs, departments, contractors and tenders.
 - **Interactive map** (home page): Bengaluru's 28 constituency areas and 369 wards (GBA delimitation 2025). It opens on
   "Where is the money going?", which shows winning bids per resident with the areas ranked beside the map. Places with
   fewer than 15 contracts or 50,000 residents are not ranked, because a few large contracts in a small place give
