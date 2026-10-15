@@ -23,6 +23,3 @@ data/snapshot.sqlite
 data/geo/raw/
 data/geo/archive/
 data/deploy-*.log
-
-# editor and agent session files
-.claude/
