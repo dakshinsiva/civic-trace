@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import shutil
 import sqlite3
 from collections import defaultdict
@@ -45,7 +46,20 @@ def flag_bucket(flag_id: str) -> str:
 
 def _write(path: Path, obj) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(obj, ensure_ascii=False, separators=(",", ":"), default=_default))
+    # allow_nan=False: browsers reject NaN/Infinity in JSON, and one bad value breaks every record in a bucket file.
+    path.write_text(json.dumps(_finite(obj), ensure_ascii=False, separators=(",", ":"), default=_default, allow_nan=False))
+
+
+def _finite(o):
+    """Replace float NaN/Infinity with None, recursively. pandas yields plain-Python float('nan') for missing
+    values in object columns, which json.dumps would otherwise write as a bare NaN (``_default`` never sees it)."""
+    if isinstance(o, float):
+        return o if math.isfinite(o) else None
+    if isinstance(o, dict):
+        return {k: _finite(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple)):
+        return [_finite(v) for v in o]
+    return o
 
 
 def _default(o):
