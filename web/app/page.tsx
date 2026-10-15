@@ -3,11 +3,13 @@ import { Suspense } from "react";
 
 import { Explorer } from "@/components/explore/Explorer";
 import { Icon } from "@/components/Icon";
+import { JsonLd } from "@/components/JsonLd";
 import { LocalitySearch } from "@/components/LocalitySearch";
 import { Term } from "@/components/Term";
 import { PageTitle } from "@/components/ui";
 import { getMeta, getOverview, hasData } from "@/lib/data";
 import { date, num, pct } from "@/lib/format";
+import { authorLd, BENGALURU, REPO, SITE_NAME, SITE_URL } from "@/lib/seo";
 
 export default function Home() {
   if (!hasData()) {
@@ -27,6 +29,45 @@ export default function Home() {
 
   return (
     <div className="space-y-10">
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: SITE_NAME,
+          url: `${SITE_URL}/`,
+          inLanguage: "en-IN",
+          description: "Who gets Bengaluru's public works contracts, what they cost and where the money goes, ward by ward.",
+          creator: authorLd,
+          potentialAction: {
+            "@type": "SearchAction",
+            target: { "@type": "EntryPoint", urlTemplate: `${SITE_URL}/tenders/?q={search_term_string}` },
+            "query-input": "required name=search_term_string",
+          },
+        }}
+      />
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "Dataset",
+          name: "Bengaluru public works tenders (Karnataka Public Procurement Portal)",
+          description: `Public works tenders published since May 2023 by BBMP, the Greater Bengaluru Authority, the five Bengaluru city corporations, B-SMILE and BSWML on the Karnataka Public Procurement Portal (KPPP): ${num(meta.counts.calls)} tender calls with estimates, winning bids, winners, number of bidders, deadlines and changes, placed on 369 wards and 28 assembly constituencies, and checked for six warning signs of tender manipulation.`,
+          url: `${SITE_URL}/`,
+          sameAs: REPO,
+          keywords: ["Bengaluru", "Bangalore", "BBMP", "public procurement", "tenders", "public works", "Karnataka", "open data"],
+          creator: authorLd,
+          isAccessibleForFree: true,
+          isBasedOn: "https://kppp.karnataka.gov.in",
+          dateModified: meta.generated_at,
+          temporalCoverage: `${meta.published_range[0].slice(0, 10)}/${meta.published_range[1].slice(0, 10)}`,
+          spatialCoverage: {
+            "@type": "Place",
+            name: "Bengaluru, Karnataka, India",
+            geo: { "@type": "GeoCoordinates", latitude: BENGALURU.lat, longitude: BENGALURU.lon },
+          },
+          variableMeasured: ["Official estimate", "Winning bid", "Winning contractor", "Number of bidders", "Time given to bid", "Changes after publication", "Warning signs"],
+          distribution: [{ "@type": "DataDownload", encodingFormat: "application/json", contentUrl: `${SITE_URL}/data/tenders-index.json` }],
+        }}
+      />
       {/* Hero */}
       <section className="relative -mx-4 -mt-8 overflow-hidden px-4 pb-4 pt-12 sm:pt-16">
         <div className="grid-bg pointer-events-none absolute inset-0 -z-10" aria-hidden />
@@ -57,6 +98,10 @@ export default function Home() {
             <Icon name="map" size={16} />
             Explore the whole city
           </a>
+          <Link href="/areas/" className="btn-outline">
+            <Icon name="map-pin" size={16} />
+            Browse areas and wards
+          </Link>
           <Link href="/findings/" className="btn-ghost">
             How widespread is it?
             <Icon name="arrow-right" size={16} />

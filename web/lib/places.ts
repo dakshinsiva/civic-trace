@@ -23,3 +23,25 @@ export function matchesPlace(name: string, query: string): boolean {
   }
   return false;
 }
+
+/** URL slug for a name: "B.T.M Layout" → "btm-layout". */
+export function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[.']/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/** Page for a constituency area: /areas/btm-layout/ (the 28 names are unique). */
+export function areaHref(name: string): string {
+  return `/areas/${slugify(name)}/`;
+}
+
+/** Page for a ward: /wards/hebbal-north-56/ (the ward key keeps names that repeat across corporations apart). */
+export function wardSlug(name: string, key: string): string {
+  return `${slugify(name)}-${slugify(key)}`;
+}
+export function wardHref(name: string, key: string): string {
+  return `/wards/${wardSlug(name, key)}/`;
+}

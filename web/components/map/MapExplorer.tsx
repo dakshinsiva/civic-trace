@@ -7,8 +7,9 @@ import { describe, formatMetric, METRICS, metricValue, RAMPS, type AreaStat, typ
 import type { Fact } from "@/lib/facts";
 import { BIDDER_COLORS } from "@/lib/facts";
 import { inr } from "@/lib/format";
-import { matchesPlace } from "@/lib/places";
+import { areaHref, matchesPlace, wardHref } from "@/lib/places";
 
+import { SCROLL_TO_MAP_KEY } from "../CommandPalette";
 import { Icon } from "../Icon";
 import { CityMap, type Level, type MapSelection } from "./CityMap";
 
@@ -106,6 +107,18 @@ export function MapExplorer({
     window.addEventListener("civictrace:hover", off);
     return () => window.removeEventListener("civictrace:hover", off);
   }, [hintDismissed]);
+
+  // Arriving from site search on another page with a place picked: bring the map into view once.
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem(SCROLL_TO_MAP_KEY)) {
+        sessionStorage.removeItem(SCROLL_TO_MAP_KEY);
+        setTimeout(() => document.getElementById("map")?.scrollIntoView({ behavior: "smooth", block: "end" }), 300);
+      }
+    } catch {
+      /* storage blocked */
+    }
+  }, []);
 
   // Fullscreen
   useEffect(() => {
@@ -495,6 +508,13 @@ function Profile({
         </button>
       </div>
       <p className="callout mt-3 bg-accent-soft text-ink">{describe(metric, v.value, v.n)}</p>
+      <Link
+        href={kind === "Area" ? areaHref(String(props.name)) : wardHref(String(props.name), String(props.key))}
+        className="mt-3 inline-flex items-center gap-1.5 text-body-m"
+      >
+        Full page for {String(props.name)}
+        <Icon name="arrow-right" size={14} />
+      </Link>
       {!stat ? (
         kind === "Ward" ? (
           <div className="mt-3 space-y-3 text-body-m text-ink-2">
