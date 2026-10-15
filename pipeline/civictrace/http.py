@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+import gzip
 import hashlib
 import json
 import threading
@@ -42,6 +43,13 @@ class Fetched:
 
     def json(self):
         return json.loads(self.body or b"null")
+
+
+def read_archived(path: str | Path) -> bytes:
+    """Bytes of an archived response, whether stored plain or gzip-compressed."""
+    p = Path(path)
+    data = p.read_bytes()
+    return gzip.decompress(data) if p.suffix == ".gz" else data
 
 
 class TransientError(Exception):
@@ -124,10 +132,11 @@ class PoliteClient:
         sha = hashlib.sha256(body).hexdigest()
         ctype = resp.headers.get("content-type", "")
         ext = "xlsx" if body[:2] == b"PK" else ("json" if "json" in ctype or body[:1] in (b"{", b"[") else "bin")
-        path = self.raw_dir / f"{archive_as}.{sha[:12]}.{ext}"
+        # gzip-compressed on disk; the sha256 is of the original (uncompressed) bytes
+        path = self.raw_dir / f"{archive_as}.{sha[:12]}.{ext}.gz"
         path.parent.mkdir(parents=True, exist_ok=True)
         if not path.exists():
-            path.write_bytes(body)
+            path.write_bytes(gzip.compress(body, compresslevel=6))
         full_url = str(resp.request.url) if resp is not None else url
         return Fetched(
             url=full_url,

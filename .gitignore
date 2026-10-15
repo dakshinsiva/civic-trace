@@ -22,3 +22,4 @@ web/public/data/
 data/snapshot.sqlite
 data/geo/raw/
 data/geo/archive/
+data/deploy-*.log

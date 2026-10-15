@@ -71,6 +71,7 @@ def reparse(db: Path = typer.Option(DB_PATH)) -> None:
     """Re-extract tender fields from archived full-view responses (no network)."""
     import json as _json
 
+    from .http import read_archived
     from .sources import kppp
 
     conn = connect(db)
@@ -81,7 +82,7 @@ def reparse(db: Path = typer.Option(DB_PATH)) -> None:
     n = 0
     for r in rows:
         try:
-            doc = _json.loads(Path(r["path"]).read_bytes() or b"null")
+            doc = _json.loads(read_archived(r["path"]) or b"null")
         except (OSError, ValueError):
             continue
         d = kppp.parse_full_view(doc) if isinstance(doc, dict) else None
