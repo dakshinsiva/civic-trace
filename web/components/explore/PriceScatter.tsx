@@ -9,9 +9,13 @@ import { useMemo, useRef, useState } from "react";
 import { ContractCard } from "@/components/ContractCard";
 import { BIDDER_COLORS, BIDDER_LABELS, bidderGroup, type Fact } from "@/lib/facts";
 import { inr } from "@/lib/format";
+import { useWidth } from "@/lib/useWidth";
 
-const W = 760, H = 380, P = { l: 64, r: 16, t: 16, b: 44 };
+const P = { l: 72, r: 16, t: 16, b: 48 };
 const GROUPS = ["1", "2", "3+", "unknown"] as const;
+// Largest group first, rarest last. Dots are small and translucent so overlapping groups blend
+// instead of one hiding another: one- and two-bidder contracts both pile up at the estimate.
+const DRAW_ORDER = ["unknown", "3+", "2", "1"] as const;
 
 /**
  * Each dot is one contract: how big the job was (x) against how far the winning
@@ -31,6 +35,8 @@ export function PriceScatter({ rows }: { rows: Fact[] }) {
   const [table, setTable] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
   const router = useRouter();
+  const [box, W] = useWidth();
+  const H = Math.round(Math.min(440, Math.max(300, W * 0.5)));
 
   const visible = pts.filter((p) => !hidden.has(p.g));
   const xDomain = useMemo(() => {
@@ -43,7 +49,7 @@ export function PriceScatter({ rows }: { rows: Fact[] }) {
   const delaunay = useMemo(
     () => Delaunay.from(visible, (p) => x(p.r.ecv!), (p) => y((p.ratio - 1) * 100)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [visible, xDomain, yMax],
+    [visible, xDomain, yMax, W, H],
   );
 
   const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
@@ -88,11 +94,13 @@ export function PriceScatter({ rows }: { rows: Fact[] }) {
       {table ? (
         <ScatterTable pts={visible} />
       ) : (
-        <div className="relative">
+        <div className="relative" ref={box}>
           <svg
             ref={svgRef}
+            width={W}
+            height={H}
             viewBox={`0 0 ${W} ${H}`}
-            className="w-full h-auto touch-none"
+            className="block max-w-full touch-none"
             role="img"
             aria-label={`Scatter of ${visible.length} contracts: estimate against winning price difference`}
             onMouseMove={onMove}
@@ -102,29 +110,29 @@ export function PriceScatter({ rows }: { rows: Fact[] }) {
           >
             {/* zones */}
             <rect x={P.l} y={y(yMax)} width={W - P.l - P.r} height={y(5) - y(yMax)} fill="var(--series-2)" opacity={0.05} />
-            <text x={W - P.r - 6} y={y(yMax) + 14} textAnchor="end" fontSize={11} fill="var(--ink-2)">
+            <text x={W - P.r - 6} y={y(yMax) + 14} textAnchor="end" fontSize={12} fill="var(--ink-2)">
               Paid more than the estimate ↑
             </text>
-            <text x={W - P.r - 6} y={y(-yMax) - 8} textAnchor="end" fontSize={11} fill="var(--ink-2)">
+            <text x={W - P.r - 6} y={y(-yMax) - 8} textAnchor="end" fontSize={12} fill="var(--ink-2)">
               Paid less than the estimate ↓
             </text>
             {y.ticks(6).map((t) => (
               <g key={t}>
                 <line x1={P.l} x2={W - P.r} y1={y(t)} y2={y(t)} stroke={t === 0 ? "var(--ink-2)" : "var(--grid)"} strokeWidth={t === 0 ? 1.5 : 1} />
-                <text x={P.l - 8} y={y(t) + 4} textAnchor="end" fontSize={11} fill="var(--muted)" className="tabular">
+                <text x={P.l - 8} y={y(t) + 4} textAnchor="end" fontSize={12} fill="var(--muted)" className="tabular">
                   {t === 0 ? "= estimate" : `${t > 0 ? "+" : ""}${t}%`}
                 </text>
               </g>
             ))}
             {xTicks.map((t) => (
-              <text key={t} x={x(t)} y={H - P.b + 18} textAnchor="middle" fontSize={11} fill="var(--muted)" className="tabular">
+              <text key={t} x={x(t)} y={H - P.b + 18} textAnchor="middle" fontSize={12} fill="var(--muted)" className="tabular">
                 {tickLabel(t)}
               </text>
             ))}
-            <text x={(P.l + W - P.r) / 2} y={H - 6} textAnchor="middle" fontSize={11} fill="var(--ink-2)">
+            <text x={(P.l + W - P.r) / 2} y={H - 6} textAnchor="middle" fontSize={12} fill="var(--ink-2)">
               Size of the job (official estimate, log scale) →
             </text>
-            {GROUPS.filter((g) => !hidden.has(g)).flatMap((g) =>
+            {DRAW_ORDER.filter((g) => !hidden.has(g)).flatMap((g) =>
               visible
                 .filter((p) => p.g === g)
                 .map((p) => (
@@ -132,11 +140,9 @@ export function PriceScatter({ rows }: { rows: Fact[] }) {
                     key={p.r.nit}
                     cx={x(p.r.ecv!)}
                     cy={y((p.ratio - 1) * 100)}
-                    r={g === "1" ? 4.5 : 3.5}
+                    r={g === "1" ? 3 : 2.5}
                     fill={BIDDER_COLORS[g]}
-                    stroke="var(--surface)"
-                    strokeWidth={1}
-                    opacity={hp && hp !== p ? 0.35 : 0.85}
+                    opacity={hp && hp !== p ? 0.25 : 0.55}
                   />
                 )),
             )}

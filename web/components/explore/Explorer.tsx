@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
+import { BarRow } from "@/components/charts/BarRow";
 import { Histogram } from "@/components/charts/Histogram";
 import { Icon } from "@/components/Icon";
 import { Term } from "@/components/Term";
@@ -16,8 +17,9 @@ import { Loading } from "@/components/ui";
 import { MapExplorer } from "@/components/map/MapExplorer";
 import { METRICS, type MetricKey } from "@/lib/areaStats";
 
+import { bigVsSmall, outcomes, PriceByCompetition, priceByGroup, SizeBands, Outcomes, pct } from "./Competition";
 import { PriceScatter } from "./PriceScatter";
-import { MonthlyVolume, SingleBidTrend } from "./Trends";
+import { CompetitionTrend, MonthlyVolume, quarterMix } from "./Trends";
 import { WhoWinsWhere } from "./WhoWinsWhere";
 
 const FILTER_KEYS: (keyof Filters)[] = ["buyer", "fy", "category", "division", "tenderType", "area"];
@@ -170,23 +172,74 @@ export function Explorer({ buyerNames }: { buyerNames: Record<string, string> })
         <Kpi label={<>Typical <Term k="window">time to bid</Term></>} value={medWindow != null ? `${Math.round(medWindow)} days` : "—"} sub="half of tenders gave less than this" />
       </div>
 
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card
+          q="Was there real competition?"
+          what={<>How many companies got as far as the <Term k="price_round">price round</Term> for each open contract that had a winner. <Term k="reserved">Reserved</Term> tenders are left out because fewer bidders are expected there.</>}
+          why="Competition keeps prices honest. When only one company is in the running, nobody is competing with it on price."
+          takeaway={openSel.length ? `${oneIn(ones, openSel.length)} open contracts in this view had only one company competing on price.` : undefined}
+        >
+          <BidderBars rows={sel.filter((r) => r.tenderType === "OPEN")} />
+        </Card>
+        <Card
+          q="Does competition change the price?"
+          what={<>The typical (median) winning price compared with the government&apos;s <Term k="estimate">official estimate</Term>, by how many companies competed.</>}
+          how="Bars to the left of the line mean the winner charged less than the estimate; to the right, more. The number in brackets is how many contracts each bar is based on."
+          why="If prices only fall when three or more companies compete, contracts with one or two bidders are likely costing more than they need to. It can also mean those jobs differ in ways the records don't show."
+          takeaway={priceTakeaway(rows)}
+        >
+          <PriceByCompetition rows={rows} />
+        </Card>
+      </div>
+
       <Card
-        q="Was there real competition?"
-        what={<>How many companies got as far as the <Term k="price_round">price round</Term> for each open contract that had a winner. <Term k="reserved">Reserved</Term> tenders are left out because fewer bidders are expected there.</>}
-        why="Competition keeps prices honest. When only one company is in the running, nobody is competing with it on price."
-        takeaway={openSel.length ? `${oneIn(ones, openSel.length)} open contracts in this view had only one company competing on price.` : undefined}
+        q="Do the biggest contracts get real competition?"
+        what={<>Open contracts with a winner, grouped by the size of the job (the <Term k="estimate">official estimate</Term>): how many companies competed, and the typical winning price.</>}
+        how="Each bar adds up to 100% of the contracts of that size. The less green in a bar, the less often three or more companies competed. 'Typical price' is the median winning price against the estimate."
+        why="Most of the money is in the large contracts, so weak competition there costs the most. Large jobs can also need equipment or experience that few local firms have."
+        takeaway={sizeTakeaway(rows)}
       >
-        <BidderBars rows={sel.filter((r) => r.tenderType === "OPEN")} />
+        <SizeBands rows={rows} />
       </Card>
 
       <Card
         q="Did the government pay more or less than its own estimate?"
         what={<>Each dot is one contract. Left to right: how big the job was. Up and down: how far the winning price was from the <Term k="estimate">official estimate</Term>.</>}
-        how="Dots on the middle line were won at exactly the estimate. Orange dots are contracts where only one company competed. Hover over a dot for the details."
+        how="Dots on the middle line were won at exactly the estimate. Orange dots are contracts where only one company competed. Where dots pile up they blend, so a solid band means many contracts. Click a group above to hide it, and hover over a dot for the details."
         why="Prices far above the estimate can mean overpaying. Prices far below can mean the work will not be done properly. A tight cluster right at the estimate is common in Bengaluru: bidders often quote the government's own rates."
         takeaway={scatterTakeaway(sel)}
       >
         <PriceScatter rows={sel} />
+      </Card>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card
+          q="Is competition getting better or worse?"
+          what="Of the open contracts that had a winner, how many companies competed, quarter by quarter."
+          how="Each column adds up to 100%. Orange at the bottom is the share with only one company; orange and blue together are the share with two or fewer. Hover over a column for the counts. Quarters with fewer than 10 contracts are left out."
+          why="Fewer one-company contracts is only progress if those contracts get real competition. If they turn into two-company contests instead, prices may not move."
+          takeaway={trendTakeaway(rows)}
+        >
+          <CompetitionTrend rows={rows} />
+        </Card>
+        <Card
+          q="When are tenders published?"
+          what="The number of tenders published each month."
+          how="Orange bars are March, the last month of the financial year."
+          why="Departments often rush to spend their budgets before 31 March, which can mean less scrutiny and shorter deadlines."
+        >
+          <MonthlyVolume rows={rows} />
+        </Card>
+      </div>
+
+      <Card
+        q="What happened to the tenders?"
+        what="Where each tender ended up, as the portal last showed it."
+        how="'Winner chosen, no award recorded' means the evaluation finished but the portal never recorded the contract award. 'Advertised again' means the tender was re-run, usually as a new call."
+        why="Tenders that are withdrawn or re-run again and again can be a way to wait for the right bidder. Missing award records leave a gap in the public paper trail."
+        takeaway={outcomeTakeaway(rows)}
+      >
+        <Outcomes rows={rows} />
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -207,25 +260,6 @@ export function Explorer({ buyerNames }: { buyerNames: Record<string, string> })
           takeaway={rows.length ? `${pctOf(rows.filter((r) => r.corr >= 3).length, rows.length)} of tenders were changed 3 or more times.` : undefined}
         >
           <CorrBars rows={rows} />
-        </Card>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card
-          q="When are tenders published?"
-          what="The number of tenders published each month."
-          how="Orange bars are March, the last month of the financial year."
-          why="Departments often rush to spend their budgets before 31 March, which can mean less scrutiny and shorter deadlines."
-        >
-          <MonthlyVolume rows={rows} />
-        </Card>
-        <Card
-          q="Is single-company competition getting better or worse?"
-          what="Of the open contracts that had a winner, the share where only one company competed, by quarter."
-          how="Hover over a point to see the counts behind it. Quarters with fewer than 10 contracts are left out."
-          why="A rising line means competition is weakening."
-        >
-          <SingleBidTrend rows={rows} />
         </Card>
       </div>
 
@@ -296,20 +330,19 @@ function BidderBars({ rows }: { rows: Fact[] }) {
   const counts = Object.fromEntries(groups.map((g) => [g, rows.filter((r) => bidderGroup(r.bidders) === g).length]));
   const total = rows.length || 1;
   return (
-    <div className="space-y-2">
+    <div className="space-y-2.5">
       {groups.map((g) => (
-        <div key={g} className="grid grid-cols-[8rem_1fr_7rem] items-center gap-3 text-sm">
-          <span className="flex items-center gap-1.5 text-ink-2">
-            <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: BIDDER_COLORS[g] }} />
-            {BIDDER_LABELS[g]}
-          </span>
-          <span className="h-5">
-            <span className="block h-5 rounded-r-[4px]" style={{ width: `${Math.max(0.5, (counts[g] / total) * 100)}%`, background: BIDDER_COLORS[g] }} />
-          </span>
-          <span className="tabular text-ink">
-            {counts[g].toLocaleString("en-IN")} <span className="text-muted">({Math.round((counts[g] / total) * 100)}%)</span>
-          </span>
-        </div>
+        <BarRow
+          key={g}
+          label={
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: BIDDER_COLORS[g] }} />
+              {BIDDER_LABELS[g]}
+            </span>
+          }
+          value={<>{counts[g].toLocaleString("en-IN")} <span className="text-muted">({pct(counts[g], total)})</span></>}
+          bar={<span className="block h-5 rounded-r-[4px]" style={{ width: `${Math.max(0.5, (counts[g] / total) * 100)}%`, background: BIDDER_COLORS[g] }} />}
+        />
       ))}
     </div>
   );
@@ -324,19 +357,16 @@ function CorrBars({ rows }: { rows: Fact[] }) {
   ];
   const total = rows.length || 1;
   return (
-    <div className="space-y-2">
+    <div className="space-y-2.5">
       {buckets.map((b, i) => {
         const n = rows.filter((r) => b.test(r.corr)).length;
         return (
-          <div key={b.label} className="grid grid-cols-[8rem_1fr_7rem] items-center gap-3 text-sm">
-            <span className="text-ink-2">{b.label}</span>
-            <span className="h-5">
-              <span className="block h-5 rounded-r-[4px]" style={{ width: `${Math.max(0.5, (n / total) * 100)}%`, background: i === 3 ? "var(--series-2)" : "var(--series-1)" }} />
-            </span>
-            <span className="tabular">
-              {n.toLocaleString("en-IN")} <span className="text-muted">({Math.round((n / total) * 100)}%)</span>
-            </span>
-          </div>
+          <BarRow
+            key={b.label}
+            label={b.label}
+            value={<>{n.toLocaleString("en-IN")} <span className="text-muted">({pct(n, total)})</span></>}
+            bar={<span className="block h-5 rounded-r-[4px]" style={{ width: `${Math.max(0.5, (n / total) * 100)}%`, background: i === 3 ? "var(--series-2)" : "var(--series-1)" }} />}
+          />
         );
       })}
     </div>
@@ -396,4 +426,45 @@ function scatterTakeaway(sel: Fact[]): string | undefined {
     out += ` Typically, when only one company competed the price came in ${say(d1)}; when 3 or more competed it came in ${say(d3)}.`;
   }
   return out;
+}
+
+function say(d: number): string {
+  const r = Math.round(Math.abs(d));
+  return r === 0 ? "right at the estimate" : `${r}% ${d < 0 ? "below" : "above"} the estimate`;
+}
+
+function priceTakeaway(rows: Fact[]): string | undefined {
+  const [one, two, many] = priceByGroup(rows);
+  if (many.med == null || (one.med == null && two.med == null)) return undefined;
+  const fewer = [one.med != null ? `with one company, ${say(one.med)}` : null, two.med != null ? `with two, ${say(two.med)}` : null].filter(Boolean).join("; ");
+  return `When three or more companies competed, the typical winning price was ${say(many.med)}. ${fewer.charAt(0).toUpperCase()}${fewer.slice(1)}.`;
+}
+
+function trendTakeaway(rows: Fact[]): string | undefined {
+  const q = quarterMix(rows);
+  if (q.length < 6) return undefined;
+  const sum = (qs: typeof q) => qs.reduce((a, e) => ({ n: a.n + e.n, one: a.one + e["1"], low: a.low + e["1"] + e["2"] }), { n: 0, one: 0, low: 0 });
+  const a = sum(q.slice(0, 4)), b = sum(q.slice(-4));
+  const one = [a.one / a.n, b.one / b.n], low = [a.low / a.n, b.low / b.n];
+  const p = (x: number) => `${Math.round(x * 100)}%`;
+  if (one[1] < one[0] - 0.02 && low[1] >= low[0] - 0.02)
+    return `Contracts with only one company fell from ${p(one[0])} to ${p(one[1])} between the first and the latest four quarters, but those with two or fewer went from ${p(low[0])} to ${p(low[1])}. Single bidders mostly gave way to pairs, not to open competition.`;
+  return `In the latest four quarters, ${p(one[1])} of contracts had only one company and ${p(low[1])} had two or fewer (first four quarters: ${p(one[0])} and ${p(low[0])}).`;
+}
+
+function sizeTakeaway(rows: Fact[]): string | undefined {
+  const s = bigVsSmall(rows);
+  if (s.big.n < 10 || s.small.n < 10 || !s.totalValue) return undefined;
+  const price = s.big.med != null ? `, and their typical price was ${say(s.big.med)}` : "";
+  return `Contracts of ₹1 crore or more were ${pct(s.big.n, s.n)} of these contracts but ${pct(s.big.value, s.totalValue)} of the money. ${pct(s.big.low, s.big.n)} of them had two or fewer companies competing, against ${pct(s.small.low, s.small.n)} of smaller jobs${price}.`;
+}
+
+function outcomeTakeaway(rows: Fact[]): string | undefined {
+  const o = outcomes(rows);
+  if (!o.total) return undefined;
+  const get = (k: string) => o.rows.find((r) => r.key === k)?.n ?? 0;
+  const rerun = get("retendered") + get("recalled");
+  const winners = get("awarded") + get("chosen");
+  const award = winners ? ` Of the ${winners.toLocaleString("en-IN")} tenders where a winner was chosen, ${pct(get("chosen"), winners)} have no award recorded on the portal (some may simply not be updated yet).` : "";
+  return `${pct(rerun, o.total)} of tender calls were withdrawn or advertised again.${award}`;
 }
