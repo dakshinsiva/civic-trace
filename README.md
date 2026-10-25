@@ -103,12 +103,19 @@ python3 -m http.server 3210 --directory web/out
   bids, where prices sit at the estimate and where a few contractors dominate. There are nine measures in all, plus
   individual contract dots, play-through-the-years, locality search, area profiles and a contractor's "where it won"
   footprint. Clicking an area filters every chart below it, and the URL keeps the view so it can be shared.
-- **Explorer charts**: "who wins where", tenders published per month, competition, price vs estimate, time to bid,
-  and changes to tenders after publication.
+- **Explorer charts**: how many companies competed and what that did to the price, competition and price by size of
+  job (contracts of ₹1 crore or more are about 15% of contracts but 86% of the money), the bidder mix quarter by quarter,
+  price vs estimate for every contract, what happened to each tender, time to bid, changes after publication, tenders
+  published per month, and "who wins where". Every chart follows the filters.
+- **Download and share**: download exactly the tenders in the current view as a CSV spreadsheet (with a link to each
+  tender), and share any view, tender, area or the findings by link, WhatsApp, LinkedIn or X.
 - **Tender pages**: the life of one tender, from publication to award. Each shows the estimate, the bid deadline and
-  every change to it, every company that reached the price round with what it offered, and the winner.
+  every change to it, every company that reached the price round with what it offered, and the winner, plus how it
+  compares with similar tenders (same type of work, size of job and open or reserved): price against the estimate,
+  number of bidders and time to bid.
 - **Department pages**: each department's tenders and the value of its winning bids by year, its local offices
-  (divisions), and how competition and prices compare there.
+  (divisions), and how competition and prices compare there. The departments index compares all of them side by side,
+  including how often the same two firms keep meeting in two-bidder contests.
 - **Supplier pages**: every tender a contractor won, from which department and in which year, with the price.
 - **How widespread?** (`/findings`): plain-language answer to "how common are the warning signs?". Prevalence of each warning sign with
   95% intervals, the competition-vs-price comparison (overall and within each type of work), and an auto-generated
