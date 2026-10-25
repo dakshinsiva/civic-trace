@@ -408,6 +408,7 @@ def export_all(conn: sqlite3.Connection, out: Path, include_relationships: bool 
     _write(out / "facts.json", _facts(calls, flags, suppressed_suppliers))
     _write(out / "findings.json", {**_findings(calls, flags, rule_summary, cfg), "bid_screens": _bid_screens(bidders, calls)})
     _write(out / "unavailable.json", _unavailable(calls))
+    _write(out / "peers.json", _peers(calls))
 
     # ------------------------------------------------------------ meta / methodology / coverage
     coverage = _coverage(calls)
@@ -771,6 +772,59 @@ def _bid_screens(bidders: dict[int, list[dict]], calls: pd.DataFrame) -> dict:
         "same_loser_tenders": share(sum(regular[p] for p in same_loser), n),
         "runner_up_gap": {"two": gaps(gaps_two), "three_plus": gaps(gaps_more)},
     }
+
+
+# "How does this tender compare?" on tender pages: typical figures for groups of similar tenders,
+# with percentiles so a page can say where one tender sits. Groups go from specific (type of work,
+# size of job, open or reserved) to broad (size of job only); a page uses the most specific group
+# that has enough tenders for the figure it shows.
+PEER_BANDS = [(0.0, 1e6, "lt10l"), (1e6, 5e6, "10l-50l"), (5e6, 1e7, "50l-1cr"), (1e7, 5e7, "1-5cr"), (5e7, math.inf, "5cr+")]
+PEER_MIN = 30
+PEER_PCTS = list(range(5, 100, 5))
+
+
+def _peer_band(ecv: float) -> str | None:
+    return next((key for lo, hi, key in PEER_BANDS if lo <= ecv < hi), None)
+
+
+def _peers(calls: pd.DataFrame) -> dict:
+    c = calls[(calls["detail_state"] != "pending") & (~calls["quarantined"]) & (calls["ecv"] > 0)].copy()
+    c["band"] = c["ecv"].map(_peer_band)
+    priced = c["has_selection"] & (c["bid_value"] > 0)
+    c["price"] = np.where(priced, (c["bid_value"] / c["ecv"] - 1) * 100, np.nan)
+    pub = pd.to_datetime(c["published_at"], utc=True, errors="coerce")
+    close = pd.to_datetime(c["close_at_original"], utc=True, errors="coerce")
+    w = (close - pub).dt.total_seconds() / 86400
+    c["window"] = w.where((w > 0) & (w < 365))
+    c["category"] = c["work_category"].fillna("—")
+    c["type"] = c["tender_type"].fillna("—")
+
+    def pcts(x: pd.Series) -> list[float] | None:
+        x = x.dropna()
+        return [round(float(v), 2) for v in np.percentile(x, PEER_PCTS)] if len(x) >= PEER_MIN else None
+
+    def summarise(g: pd.DataFrame) -> dict:
+        known = g[g["has_selection"] & g["n_price_stage_bidders"].notna()]
+        nb = len(known)
+        return {
+            "n": int(len(g)),
+            "price_n": int(g["price"].notna().sum()),
+            "price": pcts(g["price"]),
+            "bidders_n": int(nb),
+            "one": round(float((known["n_price_stage_bidders"] <= 1).mean()), 4) if nb >= PEER_MIN else None,
+            "low": round(float((known["n_price_stage_bidders"] <= 2).mean()), 4) if nb >= PEER_MIN else None,
+            "window_n": int(g["window"].notna().sum()),
+            "window": pcts(g["window"]),
+        }
+
+    groups: dict[str, dict] = {}
+    for keys in (["category", "band", "type"], ["category", "band"], ["band", "type"], ["band"]):
+        for vals, g in c.groupby(keys):
+            if len(g) < PEER_MIN:
+                continue
+            v = dict(zip(keys, vals if isinstance(vals, tuple) else (vals,)))
+            groups[f"{v.get('category', '*')}|{v['band']}|{v.get('type', '*')}"] = summarise(g)
+    return {"bands": [[lo, None if hi == math.inf else hi, key] for lo, hi, key in PEER_BANDS], "min": PEER_MIN, "pcts": PEER_PCTS, "groups": groups}
 
 
 def _unavailable(calls: pd.DataFrame) -> dict:

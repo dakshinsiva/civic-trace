@@ -5,6 +5,7 @@ import "server-only";
 import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";
 
+import type { FactsFile } from "./facts";
 import type { BuyerDoc, Meta, Overview } from "./types";
 
 const DATA_DIR = path.join(process.cwd(), "public", "data");
@@ -23,6 +24,11 @@ export function getMeta(): Meta {
 
 export function getOverview(): Overview {
   return read<Overview>("overview.json");
+}
+
+/** The columnar table behind the explorer; decode with decodeFacts. About 1.2 MB, so read it only where needed. */
+export function getFacts(): FactsFile | null {
+  return existsSync(path.join(DATA_DIR, "facts.json")) ? read<FactsFile>("facts.json") : null;
 }
 
 export function getBuyer(code: string): BuyerDoc {

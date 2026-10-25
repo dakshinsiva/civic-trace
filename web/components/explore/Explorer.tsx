@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { BarRow } from "@/components/charts/BarRow";
+import { ShareBar } from "@/components/ShareBar";
 import { Histogram } from "@/components/charts/Histogram";
 import { Icon } from "@/components/Icon";
 import { Term } from "@/components/Term";
@@ -17,6 +18,7 @@ import { Loading } from "@/components/ui";
 import { MapExplorer } from "@/components/map/MapExplorer";
 import { METRICS, type MetricKey } from "@/lib/areaStats";
 
+import { DownloadView } from "./Download";
 import { bigVsSmall, outcomes, PriceByCompetition, priceByGroup, SizeBands, Outcomes, pct } from "./Competition";
 import { PriceScatter } from "./PriceScatter";
 import { CompetitionTrend, MonthlyVolume, quarterMix } from "./Trends";
@@ -24,7 +26,7 @@ import { WhoWinsWhere } from "./WhoWinsWhere";
 
 const FILTER_KEYS: (keyof Filters)[] = ["buyer", "fy", "category", "division", "tenderType", "area"];
 
-export function Explorer({ buyerNames }: { buyerNames: Record<string, string> }) {
+export function Explorer({ buyerNames, ruleNames }: { buyerNames: Record<string, string>; ruleNames: Record<string, string> }) {
   const sp = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -118,6 +120,14 @@ export function Explorer({ buyerNames }: { buyerNames: Record<string, string> })
           Showing {rows.length.toLocaleString("en-IN")} tenders. The link in your address bar captures these filters, so you
           can share exactly this view.
         </p>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3">
+          <DownloadView
+            rows={rows}
+            filters={filters}
+            names={{ buyer: buyerNames, supplier: data.suppliers, rule: ruleNames, ruleBits: data.rule_bits, area: placeNames.area, ward: placeNames.ward }}
+          />
+          <ShareBar text={shareText(filters, buyerNames, placeNames.area)} />
+        </div>
       </details>
 
       {/* The map */}
@@ -467,4 +477,9 @@ function outcomeTakeaway(rows: Fact[]): string | undefined {
   const winners = get("awarded") + get("chosen");
   const award = winners ? ` Of the ${winners.toLocaleString("en-IN")} tenders where a winner was chosen, ${pct(get("chosen"), winners)} have no award recorded on the portal (some may simply not be updated yet).` : "";
   return `${pct(rerun, o.total)} of tender calls were withdrawn or advertised again.${award}`;
+}
+
+function shareText(f: Filters, buyerNames: Record<string, string>, areaName: (id: string) => string | undefined): string {
+  const bits = [f.area && areaName(f.area), f.buyer && (buyerNames[f.buyer] ?? f.buyer), f.division, f.category, f.fy && `FY ${f.fy}`].filter(Boolean);
+  return `Bengaluru public works tenders${bits.length ? `: ${bits.join(", ")}` : ""}, on CivicTrace`;
 }

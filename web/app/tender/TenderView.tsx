@@ -5,6 +5,8 @@ import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { Icon } from "@/components/Icon";
+import { ShareBar } from "@/components/ShareBar";
+import { TenderCompare } from "@/components/TenderCompare";
 import { Term } from "@/components/Term";
 import { ErrorNote, FlagList, Loading, PageTitle, Section } from "@/components/ui";
 import { date, datetime, inr, selectionLabel, statusLabel } from "@/lib/format";
@@ -36,6 +38,7 @@ export function TenderView() {
           {statusLabel(t.status)}
         </p>
       </PageTitle>
+      <ShareBar text={`${t.title || t.tender_number} (${t.buyer_code}), on CivicTrace`} />
 
       {t.quarantine.length > 0 && (
         <div role="note" className="rounded-md border border-notice-border bg-notice-bg px-4 py-3 text-sm text-notice-ink">
@@ -85,6 +88,15 @@ export function TenderView() {
         <Fact label={<>Companies competing on <Term k="price_round">price</Term></>} value={t.n_price_stage_bidders ?? "—"} sub={t.n_price_stage_bidders == null ? "not published" : t.n_price_stage_bidders === 1 ? "no price competition" : "listed below"} />
         <Fact label={<Term k="window">Time given to bid</Term>} value={windowDays != null ? `${Math.round(windowDays)} days` : "—"} sub="from publication to the deadline" />
       </div>
+
+      <TenderCompare
+        category={t.work_category}
+        tenderType={t.tender_type}
+        ecv={t.ecv}
+        bid={t.selection?.bid_value ?? null}
+        bidders={t.n_price_stage_bidders}
+        windowDays={windowDays}
+      />
 
       <Section title="Warning signs">
         <FlagList flags={callFlags} empty="None of our checks flagged this tender. That is not a clean bill of health; it only means these particular patterns did not appear." />

@@ -1,9 +1,11 @@
 import Link from "next/link";
 
 import { Icon } from "@/components/Icon";
-import { PageTitle } from "@/components/ui";
-import { getMeta, getOverview } from "@/lib/data";
-import { num } from "@/lib/format";
+import { PageTitle, Section } from "@/components/ui";
+import { getFacts, getMeta, getOverview } from "@/lib/data";
+import { byDepartment, deptStats, type DeptStats, type Rate } from "@/lib/deptStats";
+import { decodeFacts } from "@/lib/facts";
+import { inr, num } from "@/lib/format";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata({
@@ -17,14 +19,63 @@ export default function BuyersPage() {
   const meta = getMeta();
   const o = getOverview();
   const byCode = Object.fromEntries(meta.buyers.map((b) => [b.code, b]));
+  const facts = getFacts();
+  const rows = facts ? decodeFacts(facts) : [];
+  const depts = byDepartment(rows);
+  const city = deptStats(rows);
   return (
-    <>
+    <div className="space-y-6">
       <PageTitle title="Departments">
         <p>
           Procuring entities covered in this release. BBMP was replaced from 15 May 2025 by the Greater Bengaluru Authority
           and five city corporations; older tenders keep the BBMP name on the portal.
         </p>
       </PageTitle>
+      {depts.length > 1 && (
+        <Section title="How the departments compare">
+          <p className="max-w-3xl text-body-m text-ink-2">
+            The same measures for every department, with the counts behind each rate. Rates based on fewer than {MIN_N} contracts
+            are left out, because a handful of tenders can swing them a long way.
+          </p>
+          <div className="mt-4 overflow-x-auto">
+            <table className="data min-w-[52rem]">
+              <thead>
+                <tr>
+                  <th>Department</th>
+                  <th className="num">Tenders</th>
+                  <th className="num">Winning bids</th>
+                  <th className="num">Only one company</th>
+                  <th className="num">Two or fewer</th>
+                  <th className="num">Typical price</th>
+                  <th className="num">Withdrawn or re-run</th>
+                  <th className="num">No award recorded</th>
+                </tr>
+              </thead>
+              <tbody>
+                {depts.map(({ code, stats }) => (
+                  <CompareRow key={code} label={<Link href={`/buyers/${code}/`}>{code}</Link>} sub={byCode[code]?.name} s={stats} />
+                ))}
+                <CompareRow label={<strong className="font-medium">All departments</strong>} s={city} total />
+              </tbody>
+            </table>
+          </div>
+          <ul className="mt-3 max-w-3xl list-disc space-y-1 pl-5 text-body-s text-muted">
+            <li>
+              <strong className="font-medium text-ink-2">Only one company</strong> and <strong className="font-medium text-ink-2">two or fewer</strong>: of
+              open contracts with a winner and a published bidder count. <strong className="font-medium text-ink-2">Typical price</strong>: the median
+              winning price against the official estimate.
+            </li>
+            <li>
+              <strong className="font-medium text-ink-2">Withdrawn or re-run</strong>: of all tender calls. <strong className="font-medium text-ink-2">No award
+              recorded</strong>: of tenders where a winner was chosen, the share where the portal never recorded the award.
+            </li>
+            <li>
+              BBMP&apos;s tenders run to May 2025 and the city corporations&apos; start then, so a difference between them can reflect
+              the period as well as the department.
+            </li>
+          </ul>
+        </Section>
+      )}
       <div className="grid gap-3 sm:grid-cols-2">
         {o.by_buyer.map((b) => (
           <Link key={b.code} href={`/buyers/${b.code}/`} className="card state flex gap-4 p-4 text-ink no-underline hover:no-underline">
@@ -44,6 +95,50 @@ export default function BuyersPage() {
           </Link>
         ))}
       </div>
+    </div>
+  );
+}
+
+const MIN_N = 30;
+
+function rate(r: Rate, min = MIN_N) {
+  if (r.n < min) return <span className="text-muted">too few</span>;
+  const p = (r.k / r.n) * 100;
+  return (
+    <>
+      <span className="text-ink">{p > 0 && p < 1 ? "<1" : Math.round(p)}%</span>
+      <span className="block text-xs text-muted">
+        {num(r.k)} of {num(r.n)}
+      </span>
     </>
+  );
+}
+
+function price(s: DeptStats) {
+  if (s.priced < MIN_N || s.medPrice == null) return <span className="text-muted">too few</span>;
+  const r = Math.round(Math.abs(s.medPrice));
+  return (
+    <>
+      <span className="text-ink">{r === 0 ? "at the estimate" : `${r}% ${s.medPrice < 0 ? "below" : "above"}`}</span>
+      <span className="block text-xs text-muted">{num(s.priced)} contracts</span>
+    </>
+  );
+}
+
+function CompareRow({ label, sub, s, total }: { label: React.ReactNode; sub?: string; s: DeptStats; total?: boolean }) {
+  return (
+    <tr className={total ? "border-t-2 border-line" : undefined}>
+      <td>
+        {label}
+        {sub && <span className="block text-xs text-muted">{sub}</span>}
+      </td>
+      <td className="num">{num(s.tenders)}</td>
+      <td className="num">{inr(s.value)}</td>
+      <td className="num">{rate(s.one)}</td>
+      <td className="num">{rate(s.low)}</td>
+      <td className="num">{price(s)}</td>
+      <td className="num">{rate(s.rerun)}</td>
+      <td className="num">{rate(s.noAward)}</td>
+    </tr>
   );
 }

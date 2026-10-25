@@ -170,7 +170,7 @@ export default function Home() {
           Start with a question below the title, or click any part of the city. The charts further down follow whatever you pick.
         </p>
         <Suspense fallback={<p className="text-muted">Loading the explorer…</p>}>
-          <Explorer buyerNames={buyerNames} />
+          <Explorer buyerNames={buyerNames} ruleNames={Object.fromEntries(o.rules.map((r) => [r.rule_id, r.plain_name]))} />
         </Suspense>
       </section>
 

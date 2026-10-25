@@ -4,6 +4,7 @@ import { Icon } from "@/components/Icon";
 import { JsonLd } from "@/components/JsonLd";
 import { MapLink } from "@/components/map/MapLink";
 import { PlaceMap } from "@/components/map/PlaceMap";
+import { ShareBar } from "@/components/ShareBar";
 import { Section, Stat } from "@/components/ui";
 import { inr, num } from "@/lib/format";
 import type { Place } from "@/lib/placeData";
@@ -105,6 +106,9 @@ export function PlaceOverview({ p }: { p: Place }) {
             All areas and wards
             <Icon name="arrow-right" size={16} />
           </Link>
+        </div>
+        <div className="mt-4">
+          <ShareBar text={`${p.name}${isWard ? " ward" : ""}, Bengaluru: who got the public works contracts? On CivicTrace`} url={url} />
         </div>
       </header>
 

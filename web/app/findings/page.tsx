@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { ShareBar } from "@/components/ShareBar";
 import { Term } from "@/components/Term";
 import { PageTitle } from "@/components/ui";
 import { getFindings, getMeta, type Stat } from "@/lib/data";
@@ -62,6 +63,7 @@ export default function FindingsPage() {
           {stillReading ? " so far" : ""}.
         </p>
       </PageTitle>
+      <ShareBar text="How common are the warning signs in Bengaluru's public works tenders? On CivicTrace" />
 
       {stillReading && (
         <div role="note" className="rounded-md border border-notice-border bg-notice-bg px-4 py-3 text-sm text-notice-ink">
