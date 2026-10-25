@@ -48,3 +48,17 @@ def test_runner_up_gap():
     assert g["two"]["n"] == 13  # every open two-bid tender, including Kappa's
     assert g["two"]["within_1pct"]["k"] == 7  # six 0.5% gaps and Kappa's 0%
     assert g["three_plus"]["n"] == 1 and g["three_plus"]["median_pct"] == 3.0
+
+
+def test_screens_run_within_each_department():
+    from civictrace.export import _bid_screens_by_buyer
+
+    calls, bidders = _setup()
+    calls["buyer_code"] = "AAA"
+    calls.loc[calls.index[:3], "buyer_code"] = "BBB"  # three of Alpha/Beta's six meetings happen elsewhere
+    s = _bid_screens_by_buyer(bidders, calls)
+    assert set(s) == {"AAA", "BBB"}
+    # Split across departments, Alpha/Beta meet only 3 times in each: not a repeat pair in either.
+    assert s["BBB"]["regular_pairs"] == 0 and s["BBB"]["two_bidder_tenders"] == 3
+    assert s["AAA"]["regular_pairs"] == 1  # Gamma/Delta still meet 5 times
+    assert s["AAA"]["same_loser_pairs"] == 0

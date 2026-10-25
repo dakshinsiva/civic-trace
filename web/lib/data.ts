@@ -74,6 +74,7 @@ export type BidScreens = {
   same_loser_expected: number;
   same_loser_tenders: Stat;
   runner_up_gap: Record<"two" | "three_plus", { n: number; median_pct: number | null; within_1pct: Stat }>;
+  by_buyer?: Record<string, Pick<BidScreens, "two_bidder_tenders" | "met_min" | "regular_pairs" | "same_loser_pairs" | "same_loser_tenders">>;
 };
 
 export type Unavailable = {

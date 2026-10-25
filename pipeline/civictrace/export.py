@@ -406,7 +406,7 @@ def export_all(conn: sqlite3.Connection, out: Path, include_relationships: bool 
     }
     _write(out / "overview.json", overview)
     _write(out / "facts.json", _facts(calls, flags, suppressed_suppliers))
-    _write(out / "findings.json", {**_findings(calls, flags, rule_summary, cfg), "bid_screens": _bid_screens(bidders, calls)})
+    _write(out / "findings.json", {**_findings(calls, flags, rule_summary, cfg), "bid_screens": {**_bid_screens(bidders, calls), "by_buyer": _bid_screens_by_buyer(bidders, calls)}})
     _write(out / "unavailable.json", _unavailable(calls))
     _write(out / "peers.json", _peers(calls))
 
@@ -772,6 +772,15 @@ def _bid_screens(bidders: dict[int, list[dict]], calls: pd.DataFrame) -> dict:
         "same_loser_tenders": share(sum(regular[p] for p in same_loser), n),
         "runner_up_gap": {"two": gaps(gaps_two), "three_plus": gaps(gaps_more)},
     }
+
+
+def _bid_screens_by_buyer(bidders: dict[int, list[dict]], calls: pd.DataFrame) -> dict[str, dict]:
+    """The same screens run within each department: a pair counts as repeat only if it met that often there."""
+    out = {}
+    for code, g in calls.groupby("buyer_code"):
+        s = _bid_screens(bidders, g)
+        out[str(code)] = {k: s[k] for k in ("two_bidder_tenders", "met_min", "regular_pairs", "same_loser_pairs", "same_loser_tenders")}
+    return out
 
 
 # "How does this tender compare?" on tender pages: typical figures for groups of similar tenders,

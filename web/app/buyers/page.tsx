@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { Icon } from "@/components/Icon";
 import { PageTitle, Section } from "@/components/ui";
-import { getFacts, getMeta, getOverview } from "@/lib/data";
+import { getFacts, getFindings, getMeta, getOverview } from "@/lib/data";
 import { byDepartment, deptStats, type DeptStats, type Rate } from "@/lib/deptStats";
 import { decodeFacts } from "@/lib/facts";
 import { inr, num } from "@/lib/format";
@@ -23,6 +23,11 @@ export default function BuyersPage() {
   const rows = facts ? decodeFacts(facts) : [];
   const depts = byDepartment(rows);
   const city = deptStats(rows);
+  const screens = getFindings()?.bid_screens;
+  const pairs = (code?: string) => {
+    const s = code ? screens?.by_buyer?.[code] : screens;
+    return s ? { k: s.met_min.k, n: s.met_min.n } : undefined;
+  };
   return (
     <div className="space-y-6">
       <PageTitle title="Departments">
@@ -38,24 +43,25 @@ export default function BuyersPage() {
             are left out, because a handful of tenders can swing them a long way.
           </p>
           <div className="mt-4 overflow-x-auto">
-            <table className="data min-w-[52rem]">
+            <table className="data min-w-[56rem]">
               <thead>
                 <tr>
-                  <th>Department</th>
-                  <th className="num">Tenders</th>
-                  <th className="num">Winning bids</th>
-                  <th className="num">Only one company</th>
-                  <th className="num">Two or fewer</th>
-                  <th className="num">Typical price</th>
-                  <th className="num">Withdrawn or re-run</th>
-                  <th className="num">No award recorded</th>
+                  <th className="min-w-[13rem] align-bottom">Department</th>
+                  <th className="num whitespace-normal align-bottom leading-tight">Tenders</th>
+                  <th className="num whitespace-normal align-bottom leading-tight">Winning bids</th>
+                  <th className="num whitespace-normal align-bottom leading-tight">Only one company</th>
+                  <th className="num whitespace-normal align-bottom leading-tight">Two or fewer</th>
+                  <th className="num whitespace-normal align-bottom leading-tight">Typical price</th>
+                  <th className="num whitespace-normal align-bottom leading-tight">Withdrawn or re-run</th>
+                  <th className="num whitespace-normal align-bottom leading-tight">No award recorded</th>
+                  {screens && <th className="num whitespace-normal align-bottom leading-tight">Same two firms, {screens.min_meetings}+ times</th>}
                 </tr>
               </thead>
               <tbody>
                 {depts.map(({ code, stats }) => (
-                  <CompareRow key={code} label={<Link href={`/buyers/${code}/`}>{code}</Link>} sub={byCode[code]?.name} s={stats} />
+                  <CompareRow key={code} label={<Link href={`/buyers/${code}/`}>{code}</Link>} sub={byCode[code]?.name} s={stats} pairs={screens ? pairs(code) ?? { k: 0, n: 0 } : undefined} />
                 ))}
-                <CompareRow label={<strong className="font-medium">All departments</strong>} s={city} total />
+                <CompareRow label={<strong className="font-medium">All departments</strong>} s={city} pairs={pairs()} total />
               </tbody>
             </table>
           </div>
@@ -69,6 +75,15 @@ export default function BuyersPage() {
               <strong className="font-medium text-ink-2">Withdrawn or re-run</strong>: of all tender calls. <strong className="font-medium text-ink-2">No award
               recorded</strong>: of tenders where a winner was chosen, the share where the portal never recorded the award.
             </li>
+            {screens && (
+              <li>
+                <strong className="font-medium text-ink-2">Same two firms, {screens.min_meetings}+ times</strong>: of open contracts where exactly
+                two companies bid, the share where those two had faced each other in at least {screens.min_meetings} of that department&apos;s
+                tenders. Firms taking turns to win look like this; so does an area where only two firms do the work. Departments that
+                started in 2025 have had fewer tenders, so fewer chances for a pair to meet that often.{" "}
+                <Link href="/findings/#bid-rigging">How this is checked</Link>.
+              </li>
+            )}
             <li>
               BBMP&apos;s tenders run to May 2025 and the city corporations&apos; start then, so a difference between them can reflect
               the period as well as the department.
@@ -119,13 +134,13 @@ function price(s: DeptStats) {
   const r = Math.round(Math.abs(s.medPrice));
   return (
     <>
-      <span className="text-ink">{r === 0 ? "at the estimate" : `${r}% ${s.medPrice < 0 ? "below" : "above"}`}</span>
+      <span className="whitespace-nowrap text-ink">{r === 0 ? "at the estimate" : `${r}% ${s.medPrice < 0 ? "below" : "above"}`}</span>
       <span className="block text-xs text-muted">{num(s.priced)} contracts</span>
     </>
   );
 }
 
-function CompareRow({ label, sub, s, total }: { label: React.ReactNode; sub?: string; s: DeptStats; total?: boolean }) {
+function CompareRow({ label, sub, s, pairs, total }: { label: React.ReactNode; sub?: string; s: DeptStats; pairs?: Rate; total?: boolean }) {
   return (
     <tr className={total ? "border-t-2 border-line" : undefined}>
       <td>
@@ -139,6 +154,7 @@ function CompareRow({ label, sub, s, total }: { label: React.ReactNode; sub?: st
       <td className="num">{price(s)}</td>
       <td className="num">{rate(s.rerun)}</td>
       <td className="num">{rate(s.noAward)}</td>
+      {pairs && <td className="num">{rate(pairs)}</td>}
     </tr>
   );
 }
