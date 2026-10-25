@@ -345,6 +345,7 @@ def run(
     db_path: Path | None = None,
     retry_failed: bool = False,
     max_attempts: int = 3,
+    refresh_days: int = 7,
 ) -> None:
     run_id = uuid.uuid4().hex[:12]
     conn.execute("INSERT INTO ingest_run(run_id, started_at) VALUES (?,?)", (run_id, now_iso()))
@@ -362,7 +363,7 @@ def run(
                     queue = retry_queue(conn, max_attempts=max_attempts, dept_ids=[b["dept_id"] for b in buyers])
                     log(f"retry pass: {len(queue)} calls whose details failed (fewer than {max_attempts} attempts)")
                 else:
-                    queue = detail_queue(conn, priority_fy=priority_fy, dept_ids=[b["dept_id"] for b in buyers])
+                    queue = detail_queue(conn, refresh_days=refresh_days, priority_fy=priority_fy, dept_ids=[b["dept_id"] for b in buyers])
                 if limit:
                     queue = queue[:limit]
                 log(f"detail queue: {len(queue)} calls, {workers} worker(s), ≤1 request/{min_interval}s overall")

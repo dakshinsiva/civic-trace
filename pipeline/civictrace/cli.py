@@ -28,6 +28,7 @@ def ingest_kppp(
     workers: int = typer.Option(2, help="Concurrent workers sharing the global rate limit (max 3)."),
     retry_failed: bool = typer.Option(False, "--retry-failed", help="Only re-try calls whose details failed earlier."),
     max_attempts: int = typer.Option(3, help="With --retry-failed: skip calls already tried this many times."),
+    refresh_days: int = typer.Option(7, help="Re-fetch details of unfinished tenders whose details are older than this. Status changes found by the listing are always re-fetched, so a large value fetches only new and changed tenders."),
     db: Path = typer.Option(DB_PATH),
 ) -> None:
     """Ingest Bengaluru works tenders from KPPP (resumable)."""
@@ -49,6 +50,7 @@ def ingest_kppp(
         workers=workers,
         db_path=db,
         retry_failed=retry_failed,
+        refresh_days=refresh_days,
         max_attempts=max_attempts,
     )
 
