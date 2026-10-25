@@ -45,7 +45,8 @@ release() {
   snap="$(mktemp -d)/release.sqlite"
   if [ "$(df -m / | awk 'NR==2 {print $4}')" -lt 300 ]; then echo "ABORT: less than 300 MB free"; exit 2; fi
   git worktree add -q --detach "$wt" HEAD
-  trap 'git worktree remove --force "$wt" 2>/dev/null || true; rm -f "$snap"' EXIT
+  # Expanded now: wt and snap are local to this function and gone by the time the EXIT trap runs.
+  trap "git worktree remove --force '$wt' 2>/dev/null || true; rm -f '$snap'" EXIT
   echo "releasing $(git -C "$wt" rev-parse --short HEAD)"
   (cd "$wt/web" && pnpm install --frozen-lockfile --prefer-offline --silent)
   # Read-only snapshot: never takes a write lock on a database an ingest may be writing to.
