@@ -92,7 +92,8 @@ export function Histogram({ counts, edges, log = false, marker, markerLabel, ref
             })}
             <line x1={PAD.l} x2={W - PAD.r} y1={PAD.t + innerH} y2={PAD.t + innerH} stroke="var(--axis)" strokeWidth={1} />
             {xTicks.map((tv, i) => (
-              <text key={i} x={x(tv)} y={H - PAD.b + 16} textAnchor="middle" fontSize={12} fill="var(--muted)" className="tabular">
+              // A label near the right edge is right-aligned so it isn't clipped.
+              <text key={i} x={x(tv)} y={H - PAD.b + 16} textAnchor={x(tv) > W - PAD.r - 28 ? "end" : "middle"} fontSize={12} fill="var(--muted)" className="tabular">
                 {fx(tv)}
               </text>
             ))}

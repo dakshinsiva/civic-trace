@@ -26,9 +26,11 @@ export function bunching(rows: Fact[], limit: number) {
     // Whole-percent arithmetic, so an estimate of exactly 99% of the limit lands in the 99–100% band.
     counts[Math.min(counts.length - 1, Math.floor((e * 100) / limit) - (100 + FROM))] += 1;
   }
-  // The typical band leaves out the three bands around the line itself.
-  const ref = counts.filter((_, i) => Math.abs(i - JUST_UNDER) > 1);
-  const typical = ref.reduce((a, b) => a + b, 0) / ref.length;
+  // The typical band is the median of the bands nearby, leaving out the three around the line itself. A median, not a
+  // mean: standard packages (hundreds of works at one figure, e.g. ₹8.4 lakh) would otherwise inflate it and hide a spike.
+  const ref = counts.filter((_, i) => Math.abs(i - JUST_UNDER) > 1).sort((x, y) => x - y);
+  const m = Math.floor(ref.length / 2);
+  const typical = ref.length % 2 ? ref[m] : (ref[m - 1] + ref[m]) / 2;
   const just = counts[JUST_UNDER];
   return { edges, counts, just, typical, factor: typical > 0 ? just / typical : null, total: counts.reduce((a, b) => a + b, 0) };
 }
