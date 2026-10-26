@@ -18,6 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!p) return {};
   const s = p.stat;
   return pageMetadata({
+    feed: { url: `${p.area.href}feed.xml`, title: `New tenders in ${p.area.name}` },
     title: `${p.name} ward, Bengaluru: public works contracts and tenders`,
     description: s
       ? `${num(s.tenders)} public works tenders naming ${p.name} ward (${p.area.name}, Bengaluru) since May 2023: ${inr(s.spend)} in winning bids, who won them and warning signs. From public KPPP records.`

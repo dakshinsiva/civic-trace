@@ -26,6 +26,27 @@ export function getOverview(): Overview {
   return read<Overview>("overview.json");
 }
 
+export type RecentTender = {
+  nit_id: number;
+  tender_number: string;
+  title: string | null;
+  buyer: string;
+  division: string | null;
+  work_category: string | null;
+  tender_type: string | null;
+  ecv: number | null;
+  status: string;
+  published_at: string;
+  close_at: string | null;
+  ac: number | null;
+  ward: string | null;
+};
+
+/** The newest tenders, citywide and per area, for the RSS feeds. */
+export function getRecent(): { city_latest: number; per_area: number; tenders: RecentTender[] } {
+  return existsSync(path.join(DATA_DIR, "recent.json")) ? read("recent.json") : { city_latest: 0, per_area: 0, tenders: [] };
+}
+
 /** The columnar table behind the explorer; decode with decodeFacts. About 1.2 MB, so read it only where needed. */
 export function getFacts(): FactsFile | null {
   return existsSync(path.join(DATA_DIR, "facts.json")) ? read<FactsFile>("facts.json") : null;

@@ -17,6 +17,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!p) return {};
   const s = p.stat;
   return pageMetadata({
+    feed: { url: `${p.area.href}feed.xml`, title: `New tenders in ${p.area.name}` },
     title: `${p.name}, Bengaluru: public works contracts and tenders`,
     description: s
       ? `${num(s.tenders)} public works tenders in ${p.name} constituency, Bengaluru (Bangalore), since May 2023: ${inr(s.spend)} in winning bids, who won them, how many companies competed, and warning signs. From public KPPP records.`

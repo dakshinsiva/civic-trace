@@ -118,6 +118,13 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                 <Icon name="github" size={14} />
                 Open source · MIT licence
               </a>
+              <Link href="/open-data/" className="text-ink-2">
+                Open data
+              </Link>
+              <a href="/feed.xml" className="inline-flex items-center gap-1.5 text-ink-2">
+                <Icon name="rss" size={14} />
+                New tenders (RSS)
+              </a>
               <Link href="/coverage/" className="text-ink-2">
                 Data coverage
               </Link>

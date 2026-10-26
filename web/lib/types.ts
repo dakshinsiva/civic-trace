@@ -99,6 +99,8 @@ export type Meta = {
   sources: { name: string; url: string; terms: string; coverage: string }[];
   relationships_included: boolean;
   suppressions: { type: string; id: string; reason: string; since: string }[];
+  /** Map data credits, when the release has boundaries and named places. */
+  geo?: { available: boolean; attribution?: string; sites?: { available: boolean; attribution?: string; calls_at_named_place?: number } };
 };
 
 export type BuyerSummary = {

@@ -409,6 +409,7 @@ def export_all(conn: sqlite3.Connection, out: Path, include_relationships: bool 
     _write(out / "findings.json", {**_findings(calls, flags, rule_summary, cfg), "bid_screens": {**_bid_screens(bidders, calls), "by_buyer": _bid_screens_by_buyer(bidders, calls)}})
     _write(out / "unavailable.json", _unavailable(calls))
     _write(out / "peers.json", _peers(calls))
+    _write(out / "recent.json", _recent(calls))
 
     # ------------------------------------------------------------ meta / methodology / coverage
     coverage = _coverage(calls)
@@ -781,6 +782,45 @@ def _bid_screens_by_buyer(bidders: dict[int, list[dict]], calls: pd.DataFrame) -
         s = _bid_screens(bidders, g)
         out[str(code)] = {k: s[k] for k in ("two_bidder_tenders", "met_min", "regular_pairs", "same_loser_pairs", "same_loser_tenders")}
     return out
+
+
+# The newest tenders for the RSS feeds: the latest citywide, plus the latest in each constituency
+# area so a quiet area's feed isn't empty. Read at build time; small enough to serve as well.
+RECENT_CITY = 100
+RECENT_PER_AREA = 30
+
+
+def _recent(calls: pd.DataFrame) -> dict:
+    c = calls[calls["published_at"].notna()].sort_values(["published_at", "nit_id"], ascending=False)
+    keep = set(c.index[:RECENT_CITY])
+    if "ac_no" in c:
+        for _, g in c[c["ac_no"].notna()].groupby("ac_no"):
+            keep |= set(g.index[:RECENT_PER_AREA])
+    rows = c.loc[[i for i in c.index if i in keep]]
+    ac = rows["ac_no"] if "ac_no" in rows else pd.Series([None] * len(rows), index=rows.index)
+    ward = rows["ward_key"] if "ward_key" in rows else pd.Series([None] * len(rows), index=rows.index)
+    return {
+        "city_latest": RECENT_CITY,
+        "per_area": RECENT_PER_AREA,
+        "tenders": [
+            {
+                "nit_id": int(r["nit_id"]),
+                "tender_number": r["tender_number"],
+                "title": _clean(r["title"]),
+                "buyer": r["buyer_code"],
+                "division": _clean(r["division"]),
+                "work_category": _clean(r["work_category"]),
+                "tender_type": _clean(r["tender_type"]),
+                "ecv": _clean(r["ecv"]),
+                "status": r["status"],
+                "published_at": r["published_at"],
+                "close_at": _clean(r["close_at_final"]),
+                "ac": None if pd.isna(a) else int(a),
+                "ward": None if w is None or (isinstance(w, float) and pd.isna(w)) else w,
+            }
+            for (_, r), a, w in zip(rows.iterrows(), ac, ward)
+        ],
+    }
 
 
 # "How does this tender compare?" on tender pages: typical figures for groups of similar tenders,

@@ -38,6 +38,7 @@ export function pageMetadata({
   path,
   geo,
   robots,
+  feed = { url: "/feed.xml", title: "New public works tenders in Bengaluru" },
 }: {
   title: string;
   description: string;
@@ -45,11 +46,13 @@ export function pageMetadata({
   path: string;
   geo?: Geo;
   robots?: Metadata["robots"];
+  /** RSS feed for this page (defaults to the citywide feed of new tenders). */
+  feed?: { url: string; title: string };
 }): Metadata {
   return {
     title,
     description,
-    alternates: { canonical: path },
+    alternates: { canonical: path, types: { "application/rss+xml": [feed] } },
     openGraph: { type: "website", siteName: SITE_NAME, locale: "en_IN", url: path, title, description, images: [SHARE_IMAGE] },
     twitter: { card: "summary_large_image", title, description, images: [SHARE_IMAGE] },
     other: geoTags(geo),

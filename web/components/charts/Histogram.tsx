@@ -16,7 +16,9 @@ type Props = {
   refs?: { value: number; label: string }[];
   xLabel: string;
   /** Serializable so Server Components can pass it. */
-  format?: "days" | "ratio" | "number";
+  format?: "days" | "ratio" | "number" | "inr";
+  /** Index of one bar to draw in the highlight colour (series-2). */
+  highlight?: number;
   height?: number;
   title: string;
 };
@@ -27,9 +29,10 @@ const FORMATS = {
   days: (v: number) => v.toFixed(0),
   ratio: (v: number) => `${v.toFixed(2)}×`,
   number: (v: number) => (Math.abs(v) >= 100 ? v.toFixed(0) : v.toFixed(2)),
+  inr: (v: number) => (v >= 1e7 ? `₹${(v / 1e7).toFixed(2).replace(/\.?0+$/, "")} cr` : `₹${(v / 1e5).toFixed(1).replace(/\.0$/, "")} lakh`),
 };
 
-export function Histogram({ counts, edges, log = false, marker, markerLabel, refs = [], xLabel, format = "number", height = 220, title }: Props) {
+export function Histogram({ counts, edges, log = false, marker, markerLabel, refs = [], xLabel, format = "number", height = 220, title, highlight }: Props) {
   const id = useId();
   const [box, W] = useWidth();
   const [hover, setHover] = useState<number | null>(null);
@@ -83,7 +86,7 @@ export function Histogram({ counts, edges, log = false, marker, markerLabel, ref
               return (
                 <g key={i} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}>
                   <rect x={x0} y={PAD.t} width={Math.max(1, x1 - x0)} height={innerH} fill="transparent" />
-                  {c > 0 && <BarPath x={x0 + 1} y={y(c)} w={w} h={h} fill="var(--series-1)" opacity={hover === null || hover === i ? 1 : 0.55} />}
+                  {c > 0 && <BarPath x={x0 + 1} y={y(c)} w={w} h={h} fill={i === highlight ? "var(--series-2)" : "var(--series-1)"} opacity={hover === null || hover === i ? 1 : 0.55} />}
                 </g>
               );
             })}

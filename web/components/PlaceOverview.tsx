@@ -107,7 +107,11 @@ export function PlaceOverview({ p }: { p: Place }) {
             <Icon name="arrow-right" size={16} />
           </Link>
         </div>
-        <div className="mt-4">
+        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3">
+          <a href={`${p.area.href}feed.xml`} className="inline-flex items-center gap-1.5 text-body-s">
+            <Icon name="rss" size={14} />
+            Follow new tenders in {p.area.name} (RSS)
+          </a>
           <ShareBar text={`${p.name}${isWard ? " ward" : ""}, Bengaluru: who got the public works contracts? On CivicTrace`} url={url} />
         </div>
       </header>

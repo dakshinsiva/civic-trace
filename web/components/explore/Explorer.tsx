@@ -21,6 +21,7 @@ import { METRICS, type MetricKey } from "@/lib/areaStats";
 import { DownloadView } from "./Download";
 import { bigVsSmall, outcomes, PriceByCompetition, priceByGroup, SizeBands, Outcomes, pct } from "./Competition";
 import { PriceScatter } from "./PriceScatter";
+import { thresholdTakeaway, Thresholds } from "./Thresholds";
 import { CompetitionTrend, MonthlyVolume, quarterMix } from "./Trends";
 import { WhoWinsWhere } from "./WhoWinsWhere";
 
@@ -210,6 +211,16 @@ export function Explorer({ buyerNames, ruleNames }: { buyerNames: Record<string,
         takeaway={sizeTakeaway(rows)}
       >
         <SizeBands rows={rows} />
+      </Card>
+
+      <Card
+        q="Are jobs sized to stay just under a limit?"
+        what={<>How many tenders have an <Term k="estimate">official estimate</Term> in each 1% band around a round figure. Pick a figure above the chart.</>}
+        how="The orange bar is the 1% just under the line. A spike there means jobs are being sized to land just below the figure; the number next to each choice is how many times a typical nearby band it holds."
+        why="Round figures often mark limits: who may approve a job, or which procedure applies. Sizing a job just under one, or splitting one job into several, can avoid a higher level of approval or scrutiny. A fixed budget per ward or per work, spent up to the limit, produces the same spike."
+        takeaway={thresholdTakeaway(rows)}
+      >
+        <Thresholds rows={rows} />
       </Card>
 
       <Card

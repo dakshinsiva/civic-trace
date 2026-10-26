@@ -25,6 +25,7 @@ const LEARN: NavItem[] = [
   { href: "/patterns/", label: "How manipulation works", icon: "lightbulb" },
   { href: "/methodology/", label: "How we check", icon: "list-checks" },
   { href: "/glossary/", label: "Glossary", icon: "book-open" },
+  { href: "/open-data/", label: "Open data", icon: "download" },
   { href: "/coverage/", label: "Data coverage", icon: "database" },
   { href: "/corrections/", label: "Report an error", icon: "message-square-warning" },
 ];
