@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored anatomy kit (MIT, github.com/wheresryan22/anatomy), kept unmodified so it can be updated from upstream.
+    "components/iso/**",
   ]),
 ]);
 

@@ -1,0 +1,111 @@
+/* Site theme for the anatomy kit, scoped to the figure (never on :root). The site is light by
+   default and dark when the system asks for it (unless data-theme="light") or when
+   data-theme="dark"; the kit's own sets are light and dark, so map them the same way, with the
+   card and paper on the site's surface and the one lit accent in the site's accent colour. */
+.ct-iso {
+  --anatomy-page: var(--page);
+  --anatomy-card: var(--surface);
+  --anatomy-paper: var(--surface);
+  --anatomy-text: var(--ink-2);
+  --anatomy-strong: var(--ink);
+  --anatomy-muted: var(--muted);
+  --anatomy-face: #ffffff;
+  --anatomy-top: #ffffff;
+  --anatomy-shade-0: #dcdcd9;
+  --anatomy-shade-1: #e5e5e2;
+  --anatomy-shade-2: #ededea;
+  --anatomy-shade-3: #f4f4f1;
+  --anatomy-lit-top: #ffffff;
+  --anatomy-lit-shade: #eeeeeb;
+  --anatomy-hi: #26262a;
+  --anatomy-mid: #8a8a8f;
+  --anatomy-lo: #b4b4b8;
+  --anatomy-faint: #d4d4d6;
+  --anatomy-lit: var(--accent);
+  --anatomy-halo: #8a8a80;
+  --anatomy-halo-opacity: 0.32;
+  --anatomy-dot: #3a3a3e;
+  --anatomy-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .ct-iso {
+    --anatomy-face: #191c20;
+    --anatomy-top: #1a1d21;
+    --anatomy-shade-0: #0b0d10;
+    --anatomy-shade-1: #0f1114;
+    --anatomy-shade-2: #121418;
+    --anatomy-shade-3: #15181b;
+    --anatomy-lit-top: #23272c;
+    --anatomy-lit-shade: #1b1e22;
+    --anatomy-hi: #d6d8db;
+    --anatomy-mid: #6b7077;
+    --anatomy-lo: #3f444a;
+    --anatomy-faint: #2a2e33;
+    --anatomy-halo: #030405;
+    --anatomy-halo-opacity: 0.9;
+    --anatomy-dot: #e6e8ea;
+  }
+}
+:root[data-theme="dark"] .ct-iso {
+  --anatomy-face: #191c20;
+  --anatomy-top: #1a1d21;
+  --anatomy-shade-0: #0b0d10;
+  --anatomy-shade-1: #0f1114;
+  --anatomy-shade-2: #121418;
+  --anatomy-shade-3: #15181b;
+  --anatomy-lit-top: #23272c;
+  --anatomy-lit-shade: #1b1e22;
+  --anatomy-hi: #d6d8db;
+  --anatomy-mid: #6b7077;
+  --anatomy-lo: #3f444a;
+  --anatomy-faint: #2a2e33;
+  --anatomy-halo: #030405;
+  --anatomy-halo-opacity: 0.9;
+  --anatomy-dot: #e6e8ea;
+}
+
+/* The card sits in the site's own card style: rounded, hairline border, no outer margin. */
+.ct-iso .iso-figure {
+  margin: 0;
+}
+.ct-iso .iso-plate {
+  border-radius: 12px;
+  box-shadow: 0 0 0 1px var(--border);
+  padding: 46px 20px 50px;
+}
+.ct-iso .iso-legend {
+  font-size: 12.5px;
+}
+
+/* The figure is the control: a focus ring, no text selection while hovering, and the page still scrolls on touch. */
+.ct-tenderbox {
+  cursor: pointer;
+  touch-action: pan-y;
+  user-select: none;
+  border-radius: 8px;
+}
+.ct-tenderbox:focus-visible {
+  outline: 1px solid var(--anatomy-muted);
+  outline-offset: 6px;
+}
+
+/* The slot is a dark opening in the bezel; the shackle a flat steel arch. */
+.ct-slot {
+  fill: var(--anatomy-shade-0);
+  stroke: var(--anatomy-lo);
+  stroke-width: var(--anatomy-weight);
+  vector-effect: non-scaling-stroke;
+}
+.ct-shackle {
+  fill: var(--anatomy-shade-2);
+  stroke: var(--anatomy-hi);
+  stroke-width: var(--anatomy-weight);
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+@media (max-width: 560px) {
+  .ct-iso .iso-plate {
+    padding: 42px 8px 64px;
+  }
+}
