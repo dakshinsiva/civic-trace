@@ -7,9 +7,7 @@ import { JsonLd } from "@/components/JsonLd";
 import { LocalitySearch } from "@/components/LocalitySearch";
 import { Term } from "@/components/Term";
 import { PageTitle } from "@/components/ui";
-import { TenderBoxFigure } from "@/components/figures/tenderbox/figure";
-import type { Competition } from "@/components/figures/tenderbox/model";
-import { getFindings, getMeta, getOverview, hasData } from "@/lib/data";
+import { getMeta, getOverview, hasData } from "@/lib/data";
 import { date, num, pct } from "@/lib/format";
 import { authorLd, BENGALURU, REPO, SITE_NAME, SITE_URL } from "@/lib/seo";
 
@@ -32,11 +30,6 @@ export default function Home() {
   const unavailable = meta.coverage.reduce((a, c) => a + c.detail_unavailable, 0);
   const collecting = meta.counts.calls > 0 && pending / meta.counts.calls >= 0.02;
   const share = o.base_rate.share;
-  const byBidders = getFindings()?.median_price_vs_estimate_by_bidders;
-  const competition: Competition | null =
-    byBidders && byBidders.one != null && byBidders.two != null && byBidders.three_plus != null
-      ? { 1: { med: byBidders.one, n: byBidders.n_one }, 2: { med: byBidders.two, n: byBidders.n_two }, 3: { med: byBidders.three_plus, n: byBidders.n_three_plus } }
-      : null;
 
   return (
     <div className="space-y-10">
@@ -82,8 +75,6 @@ export default function Home() {
       {/* Hero */}
       <section className="relative -mx-4 -mt-8 overflow-hidden px-4 pb-4 pt-12 sm:pt-16">
         <div className="grid-bg pointer-events-none absolute inset-0 -z-10" aria-hidden />
-        <div className="grid items-center gap-x-12 gap-y-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,500px)]">
-        <div>
         <p className="label-mono flex flex-wrap items-center gap-x-3 gap-y-1 text-muted">
           <span className="flex items-center gap-2 text-accent">
             <span className="live-dot" aria-hidden />
@@ -123,9 +114,6 @@ export default function Home() {
             Search all tenders
             <Icon name="arrow-right" size={16} />
           </Link>
-        </div>
-        </div>
-        {competition && <TenderBoxFigure data={competition} />}
         </div>
         <ol className="mt-12 grid gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-3">
           <Step n={1} title="Find your area" text="Search a ward or neighbourhood. The map zooms in and every chart below shows that place." />

@@ -194,7 +194,3 @@ dakshinrajsiva@gmail.com
 
 Code: MIT. Data: as published by the Government of Karnataka (KPPP), reproduced with acknowledgement. Place
 locations: © OpenStreetMap contributors (ODbL).
-
-The homepage figure (a tender box with a price gauge) is drawn with the
-[anatomy](https://github.com/wheresryan22/anatomy) isometric kit (MIT), vendored unmodified in `web/components/iso/`
-with its licence.
